@@ -1,0 +1,166 @@
+<!DOCTYPE doctype PUBLIC "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+  <meta http-equiv="Content-Type"
+ content="text/html; charset=iso-8859-1">
+  <meta name="author" content="Graeme Gill">
+  <meta name="description" content="Root of Argyll CMS documentation">
+  <meta name="GENERATOR"
+ content="Mozilla/4.73 [en] (WinNT; I) [Netscape]">
+  <meta name="Author" content="Graeme Gill">
+  <meta name="Description"
+ content="Summary of changes for the most recent release.">
+  <title>Argyll CMS changes since last release</title>
+</head>
+<body>
+<h1> Summary of Argyll CMS Changes since last release</h1>
+<br>
+<h1>[V1.1.0 RC1 -&gt; V1.1.0 RC2]</h1>
+<ul>
+  <li>Reworked gamut mapping to address problems found with RC1.
+Restored saturation and hue fidelity while retaining improvements.<br>
+  </li>
+  <li>Added CIE C type illuminant spectrum support.</li>
+  <li>Added device power value for targen to allow calibrating devices
+that have extreme non linearity.</li>
+  <li>Improved X11 XRandR CRTC detection.</li>
+  <li>Clarified licensing of various files (GPLv2+ files, reference
+files and documentation).<br>
+  </li>
+</ul>
+<h1>[V1.0.4 -&gt; V1.1.0 RC1]</h1>
+<ul>
+  <li>Spyder3 and ColorMunki Design, Photo and Create instrument
+support.</li>
+  <li>Added a complete printer calibration system. This can work either
+with a print system that supports per channel print calibration curves,
+or purely using ICC profiling mechanisms.</li>
+  <li>Default targen (OFPS) test point distribution has been re-written
+to generate test points on the gamut surface, refine the point
+locations when using a guide profile, and use a better error estimate
+model to determine the test point locations. <br>
+  </li>
+  <li>Improved and re-tuned
+gamut mapping. This is noticeably smoother and better retains source
+image detail.</li>
+  <li>Re-tuned the cLUT profile creation smoothness vs.
+accuracy.</li>
+  <li>Improved collink special black and colorant handling so that the
+gamut mapping is consistent&nbsp; with the special black and colorant
+mapping</li>
+  <li>Added i1pro &amp; Color Munki flash measurement
+support.&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <br>
+  </li>
+  <li>Improve reliability of detecting backwards read i1pro/Munki
+strips.<br>
+  </li>
+  <li>Added spotread option to save spectral reading of an illuminant
+to a .sp file.</li>
+  <li>Added Color Rendering Index (Ra) to spotread measurement results.<br>
+  </li>
+</ul>
+<h1>[V1.0.3 -&gt; V1.0.4]</h1>
+<ul>
+  <li>Modify icc/icclib to protect against integer overflow exploits,
+and fixes to minor bugs. Bump icclib version to 2.11 to reflect this.<br>
+  </li>
+  <li>Fix bug in spectro/hidio.c that can cause a crash (bus error) on
+OS X for any program that accesses the instruments.</li>
+  <li>Fix bug in xicc/xfit.c where too little memory was being
+allocated.<br>
+  </li>
+</ul>
+<h1>[V1.0.2 -&gt; V1.0.3]</h1>
+<ul>
+  <li>Added multi-TIFF and popularity filtering to <span
+ style="font-weight: bold;">tiffgamut</span>.<br>
+  </li>
+  <li>Modified gamut mapping in <span style="font-weight: bold;">colprof</span>
+and <span style="font-weight: bold;">collink</span> to be consistent,
+and have higher perceptual intent saturation.<br>
+  </li>
+  <li>Fixed timeout problem with the Eye-One Display colorimeter.<br>
+  </li>
+  <li>Fix segmentation fault in <span style="font-weight: bold;">dispread</span>.</li>
+  <li>Fix out of memory error in <span style="font-weight: bold;">colprof
+    </span>for systems with &gt; 3Gig Ram.</li>
+  <li>Add support for the Eye-One Monitor spectrometer.</li>
+  <li>Added -L option to <span style="font-weight: bold;">printtarg</span>
+to suppress the i1pro target holder clip margin.<br>
+  </li>
+  <li>Fixed bug in <span style="font-weight: bold;">dispcal</span>
+when using -a with -t<br>
+  </li>
+</ul>
+<h1>[V1.0.1 -&gt; V1.0.2]</h1>
+Various bug fixes, the main ones being:<br>
+<ul>
+  <li>Fixed some <span style="font-weight: bold;">colprof </span>performance
+and memory usage issues.</li>
+  <li>Fixed issues with Eye-One Pro Rev B timeouts.</li>
+  <li>Added new option to collink -fk, that forces 000K input to K only
+output.</li>
+  <li>Added device target value quantization option to <span
+ style="font-weight: bold;">printtarg</span>, as well as making it
+default for
+TIFF output files.put files.</li>
+  <li>Fixed leak that was affecting <span style="font-weight: bold;">printtarg</span>.<br>
+  </li>
+</ul>
+<h1>[V0.70 Beta 8 -&gt; V1.0.0] <br>
+</h1>
+<br>
+Apart from numerous bug fixes and many minor feature additions and
+improvements, the main changes to this version compared to the previous
+one are:<br>
+<ul>
+  <li>Speedup in profile and device link generation (inversion code),
+and better memory usage.<br>
+  </li>
+  <li>Support for embedded profiles in TIFF files.</li>
+  <li>Support for installing and uninstalling and loading of display
+profiles for all operating systems, and a micro CMM system for X11/Linux<br>
+  </li>
+  <li>Improved display calibration and profiling, including ambient
+light adjustment.</li>
+  <li>X11 XRandR 1.2 support added.</li>
+  <li>Raster test charts now supported, as well as PS and EPS.<br>
+  </li>
+  <li>Guidance for installing on a wider range of systems.</li>
+  <li>Fixed luminance and ambient calibration issues with various
+instruments.</li>
+  <li>Renamed "profile" to "colprof", and "icclink" to "collink" to
+avoid clashes that have arisen with other executable names.</li>
+  <li>Streamlined source code build system, for much easier building.<br>
+  </li>
+  <li>Installation archives now include a top directory, and gzip/tar
+format for OS X and Linux.</li>
+  <li>Added B2A table to input device LUT profiles by default.<br>
+  </li>
+</ul>
+As usual, a more detailed description of all changes is in the <b>log.txt</b>
+file that accompanies the
+source
+code.
+<h1>[V0.60 -&gt; V0.70 Beta 8] </h1>
+<ul>
+  <li>Added quick display ICC profile creation as part of calibration.</li>
+  <li>Added support for the Huey, Spyder 2, DTP20, Eye-One Pro,
+DTP22/Digital Swatchbook, Eye-One Display 1 and 2 instruments.</li>
+  <li>Changed to GPL Version 3 license.</li>
+  <li>Countless other bug fixes and feature enhancements.<br>
+  </li>
+</ul>
+<br>
+<br>
+<br>
+<p><br>
+&nbsp; <br>
+&nbsp; <br>
+&nbsp; <br>
+&nbsp; <br>
+&nbsp; <br>
+&nbsp; </p>
+<br>
+</body>
+</html>
