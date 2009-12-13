@@ -54,9 +54,6 @@
 #include "cgats.h"
 #include "conv.h"
 #include "dispwin.h"
-#if defined(UNIX) && !defined(__APPLE__)
-#include "ucmm.h"
-#endif
 
 #define VERIFY_TOL (1.0/255.0)
 #undef DISABLE_RANDR				/* Disable XRandR code */
@@ -1954,24 +1951,8 @@ int dispwin_install_profile(dispwin *p, char *fname, ramdac *r, p_scope scope) {
 
 #if defined(UNIX) && !defined(__APPLE__)
 	{
-		ucmm_error ev;
-		ucmm_scope sc;
 		FILE *fp;
-		unsigned long psize, bread;
-		unsigned char *atomv;
 		int rv;
-
-		if (scope == p_scope_network
-		 || scope == p_scope_system
-		 || scope == p_scope_local)
-			sc = ucmm_local_system;
-		else 
-			sc = ucmm_user;
-
-		if ((ev = ucmm_install_monitor_profile(sc, p->edid, p->edid_len, p->name, fname)) != ucmm_ok) {
-			debugr2((errout,"Installing profile '%s' failed with error %d '%s'\n",fname,ev,ucmm_error_string(ev)));
-			return 1;
-		} 
 
 		if ((rv = set_X11_atom(p, fname)) != 0) {
 			debugr2((errout,"Setting X11 atom failed"));
@@ -2157,21 +2138,6 @@ int dispwin_uninstall_profile(dispwin *p, char *fname, p_scope scope) {
 
 #if defined(UNIX) && !defined(__APPLE__)
 	{
-		ucmm_error ev;
-		ucmm_scope sc;
-
-		if (scope == p_scope_network
-		 || scope == p_scope_system
-		 || scope == p_scope_local)
-			sc = ucmm_local_system;
-		else 
-			sc = ucmm_user;
-
-		if ((ev = ucmm_uninstall_monitor_profile(sc, p->edid, p->edid_len, p->name, fname)) != ucmm_ok) {
-			debugr2((errout,"Installing profile '%s' failed with error %d '%s'\n",fname,ev,ucmm_error_string(ev)));
-			return 1;
-		} 
-
 		XDeleteProperty(p->mydisplay, RootWindow(p->mydisplay, 0), p->icc_atom);
 
 #if RANDR_MAJOR == 1 && RANDR_MINOR >= 2 && !defined(DISABLE_RANDR)
@@ -2293,42 +2259,6 @@ icmFile *dispwin_get_profile(dispwin *p, char *name, int mxlen) {
 #endif /*  __APPLE__ */
 
 #if defined(UNIX) && !defined(__APPLE__)
-	/* Try and get the currently installed profile from ucmm */
-	{
-		ucmm_error ev;
-		char *profile = NULL;
-
-		debugr2((errout,"dispwin_get_profile called\n"));
-
-		if ((ev = ucmm_get_monitor_profile(p->edid, p->edid_len, p->name, &profile)) == ucmm_ok) {
-
-			if (name != NULL) {
-				strncpy(name, profile, mxlen);
-				name[mxlen] = '\000';
-			}
-
-			debugr2((errout,"Loading current profile '%s'\n",profile));
-			if ((rd_fp = new_icmFileStd_name(profile,"r")) == NULL) {
-				debugr2((errout,"Can't open file '%s'",profile));
-				free(profile);
-				return NULL;
-			}
-
-			/* Implicitly we set the X11 atom to be the profile we just got */ 
-			debugr2((errout,"Setting X11 atom to current profile '%s'\n",profile));
-			if (set_X11_atom(p, profile) != 0) {
-				debugr2((errout,"Setting X11 atom to profile '%s' failed",profile));
-				/* Hmm. We ignore this error */
-			}
-			return rd_fp;
-		} 
-		if (ev != ucmm_no_profile) {
-			debugr2((errout,"Got ucmm error %d '%s'\n",ev,ucmm_error_string(ev)));
-			return NULL;
-		}
-		debugr2((errout,"Failed to get configured profile, so use X11 atom\n"));
-		/* Drop through to using the X11 root window atom */
-	}
 	{
 		Atom ret_type;
 		int ret_format;
