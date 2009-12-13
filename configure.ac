@@ -40,6 +40,7 @@ AC_CONFIG_FILES([Makefile
                  tools/Makefile
                  libusb/Makefile
                  doc/Makefile
+                 ref/Makefile
 		 icc/Makefile])
 AC_OUTPUT
 
