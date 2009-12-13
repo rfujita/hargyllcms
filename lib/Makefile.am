@@ -60,5 +60,3 @@ libargyll_a_SOURCES += ../numlib/numlib.h ../numlib/numsup.c ../numlib/numsup.h 
 	../numlib/powell.c ../numlib/powell.h ../numlib/dhsx.c ../numlib/dhsx.h ../numlib/ludecomp.c ../numlib/ludecomp.h ../numlib/svd.c	\
 	../numlib/svd.h ../numlib/zbrent.c ../numlib/zbrent.h ../numlib/rand.c ../numlib/rand.h ../numlib/sobol.c ../numlib/sobol.h ../numlib/aatree.c ../numlib/aatree.h
 
-EXTRA_DIST= ../xicc/xmono.c ../xicc/xmatrix.c ../xicc/xlut.c
-

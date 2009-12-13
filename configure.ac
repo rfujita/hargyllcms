@@ -37,10 +37,24 @@ AC_SUBST(slashlibdir)
 
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
-                 tools/Makefile
-                 libusb/Makefile
+                 cgats/Makefile
                  doc/Makefile
+                 gamut/Makefile
+                 h/Makefile
+                 icc/Makefile
+                 libusb/Makefile
+                 link/Makefile
+                 numlib/Makefile
+                 plot/Makefile
+                 profile/Makefile
                  ref/Makefile
-		 icc/Makefile])
+                 render/Makefile
+                 rspl/Makefile
+                 scanin/Makefile
+                 spectro/Makefile
+                 target/Makefile
+                 tweak/Makefile
+                 xicc/Makefile
+                 tools/Makefile])
 AC_OUTPUT
 
