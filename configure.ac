@@ -38,6 +38,7 @@ AC_SUBST(slashlibdir)
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
                  tools/Makefile
+                 libusb/Makefile
 		 icc/Makefile])
 AC_OUTPUT
 
