@@ -22,4 +22,4 @@ SUBDIRS =						\
 	xicc						\
 	tools
 
-EXTRA_DIST = Readme.txt ttbd.txt log.txt
+EXTRA_DIST = Readme.txt ttbd.txt log.txt legal.sh
