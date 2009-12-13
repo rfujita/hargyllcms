@@ -54,8 +54,15 @@ int setup_spyd2(char *ovrd_exe_path) {
 	spyder2_pld_size = &pld_size; 
 	spyder2_pld_bytes = pld_bytes; 
 
-	if (ovrd_exe_path == NULL)
+	if (ovrd_exe_path == NULL) {
+		int tmp;
+		
+		if (tmp = setup_spyd2 ("/var/lib/argyll/"))
+			return tmp;
+		if (tmp = setup_spyd2 ("/lib/firmware/"))
+			return tmp;
 		ovrd_exe_path = exe_path;		/* Use global */
+	}
 
 	/* If no firmware compiled in, see if there is a file to load from. */
 	if ((pld_size == 0 || pld_size == 0x11223344) && loaded == 0) {
