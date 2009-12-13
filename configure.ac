@@ -37,6 +37,7 @@ AC_SUBST(slashlibdir)
 
 AC_CONFIG_FILES([Makefile
                  lib/Makefile
-				 icc/Makefile])
+                 tools/Makefile
+		 icc/Makefile])
 AC_OUTPUT
 

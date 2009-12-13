@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-SUBDIRS = lib icc
+SUBDIRS = lib icc tools
 
 EXTRA_DIST = Readme.txt ttbd.txt log.txt
 
