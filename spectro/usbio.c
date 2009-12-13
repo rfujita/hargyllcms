@@ -102,10 +102,6 @@ struct _icoms *p
 #ifdef ENABLE_USB
 	struct usb_bus *bus;
 
-	/* Check that we've got an up to date version of libusb */
-	if (usb_argyll_patched() < 2)
-		error("usblib isn't up to date to work with this version of Argyll");
-
 // ~~99
 //	if (p->debug)
 //		usb_set_debug(p->debug);
