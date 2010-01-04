@@ -11,7 +11,7 @@
 /* major number = 8 bits */
 
 #define ARGYLL_VERSION 0x01010
-#define ARGYLL_VERSION_STR "1.1.0_RC2"
+#define ARGYLL_VERSION_STR "1.1.0_RC3"
 
 /* Maximum file path length */
 #define MAXNAMEL 512

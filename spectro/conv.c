@@ -170,6 +170,8 @@ int set_normal_priority() {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#undef USE_BEGINTHREAD
+
 /* Destroy the thread */
 static void athread_del(
 athread *p
@@ -179,7 +181,9 @@ athread *p
 	if (p == NULL)
 		return;
 
-	if (p->th != NULL) {
+	if (p->th != NULL) {		/* Oops. this isn't good. */
+		DBG("athread_del calling TerminateThread() because thread hasn't finished\n");
+		TerminateThread(p->th, -1);		/* But it is worse to leave it hanging around */
 		CloseHandle(p->th);
 	}
 
@@ -188,7 +192,7 @@ athread *p
 
 /* _beginthread doesn't leak memory, but */
 /* needs to be linked to a different library */
-#ifdef NEVER
+#ifdef USE_BEGINTHREAD
 /* Thread function */
 static void __cdecl threadproc(
 	void *lpParameter
@@ -201,7 +205,9 @@ DWORD WINAPI threadproc(
 	athread *p = (athread *)lpParameter;
 
 	p->result = p->function(p->context);
-#ifdef NEVER
+	CloseHandle(p->th);
+	p->th = NULL;
+#ifdef USE_BEGINTHREAD
 #else
 	return 0;
 #endif
@@ -223,7 +229,7 @@ athread *new_athread(
 	p->del = athread_del;
 
 	/* Create a thread */
-#ifdef NEVER
+#ifdef USE_BEGINTHREAD
 	p->th = _beginthread(threadproc, 0, (void *)p);
 	if (p->th == -1) {
 #else

@@ -246,15 +246,18 @@ struct _ofps {
 	double perc_wght;	/* Perceptual space weighting */
 	double curv_wght;	/* Curvature weighting */
 
+	int fxno;		/* Number of non-unique fixed points provided */
+	fxpos **ufx;	/* fnp randomized unique fixed points to add */
+
 	int gnp;		/* Number of fake gamut nodes (-ve index) */
 					/* -1 to -2di-1 are fake boundary node indexes, */
 					/* with -2di-1 being the ink limit boundary. */
 					/* -2di-2 is the fake inside node, */
 					/* -2di-3 is the fake outside node, */
-	int fnp;		/* Number of existing fixed points in list */
+	int fnp;		/* Number of unique fixed points in list */
 	int tinp;		/* Target number of total points in list, including fnp */
 	int np;			/* Number of points currently in list */
-	node *_n, **n;	/* tinp list of points (tinp allocated) */
+	node *_n, **n;	/* tinp allocation of points, list of pointers to points */
 	int nv;			/* Current number of verticies */
 	int nxvno;		/* Next vertex serial number */
 	int nxmno;		/* Next midpoint serial number */

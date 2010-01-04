@@ -9,7 +9,7 @@
  *
  * Copyright 2000 Graeme W. Gill
  * All rights reserved.
- * This material is licenced under the GNU AFFERO GENERAL PUBLIC LICENSE Version 3 :-
+ * This material is licenced under the GNU AFFERO GENERAL PUB LICENSE Version 3 :-
  * see the License.txt file for licencing details.
  *
  * Based on the old iccXfm class.
@@ -46,6 +46,7 @@
 						/* (more at the end) */
 
 #define XICC_USE_HK 1	/* [Set] Set to 1 to use Helmholtz-Kohlraush in all CAM conversions */
+#define XICC_NOCAMCL 0	/* [Unset] Set to 1 to disable clipping out of CAM gamut on XYZ to Jab */
 
 /* ------------------------------------------------------------------------------ */
 
@@ -98,6 +99,7 @@ const char *icx2str(icmEnumType etype, int enumval);
 /* expanded set of methods. */
 
 /* Black generation rule */
+/* The rule is all in terms of device K and L* values */
 typedef enum {
     icxKvalue    = 0,	/* K is specified as output K target by PCS auxiliary */
     icxKlocus    = 1,	/* K is specified as proportion of K locus by PCS auxiliary */
@@ -115,10 +117,12 @@ typedef struct {
 	double Kenpo;		/* K end point as prop. of L locus (0.0 - 1.0) */
 	double Kenle;		/* K end level at Black end (0.0 - 1.0) */
 	double Kshap;		/* K transition shape, 0.0-1.0 concave, 1.0-2.0 convex */
+	double Kskew;		/* K transition shape skew, 1.0 = even */
 } icxInkCurve;
 
 /* Default black generation smoothing value */
-#define ICXINKDEFSMTH 0.15
+#define ICXINKDEFSMTH 0.10
+#define ICXINKDEFSKEW 2.0	/* Curve shape skew (matches typical device behaviour) */
 
 /* Structure to convey inking details */
 typedef struct {
@@ -200,7 +204,6 @@ struct _xicc {
 									/* irrespective of the native or effective PCS. */
 									/* Ignored if MERGE_CLUT is set or vector clip is used. */
 									/* May halve the inverse lookup performance! */ 
-#define ICX_CAM_LOCUSCLIP 0x0200	/* Clip to spectrum locus befor any conversion to CAM */
 #define ICX_INT_SEPARATE 0x0400		/* Handle 4 dimensional devices with fixed inking rules */
 									/* with an optimised internal separation pass, rather */
 									/* than a point by point inverse locus lookup . */
@@ -227,6 +230,7 @@ struct _xicc {
 	/* "create" flags */
 #define ICX_SET_WHITE       0x0001		/* find, set and make relative to the white point */
 #define ICX_SET_BLACK       0x0002		/* find and set the black point */
+#define ICX_WRITE_WBL       0x0004		/* Matrix: write White, Black & Luminance tags */
 #define ICX_NO_IN_SHP_LUTS  0x0040		/* If LuLut: Don't create input (Device) shaper curves. */
 #define ICX_NO_IN_POS_LUTS  0x0080		/* If LuLut: Don't create input (Device) poistion curves. */
 #define ICX_NO_OUT_LUTS     0x0100		/* If LuLut: Don't create output (PCS) curves. */
@@ -309,7 +313,6 @@ xicc *new_xicc(icc *picc);
 	int nearclip;	/* Flag - If clipping occurs, return the nearest solution, */		\
 	int mergeclut;	/* Flag - If LuLut: Merge output() and out_abs() into clut(). */	\
 	int camclip;	/* Flag - If LuLut: Use CIECAM for clut reverse lookup clipping */ \
-	int camlocusclip; /* Flag - clip to spectrum locus befor any conversion to CAM */   \
 	int intsep;		/* Flag - If LuLut: Do internal separation for 4d device */			\
 	int fastsetup;	/* Flag - If LuLut: Do fast setup at cost of slower throughput */	\
 																						\
@@ -339,8 +342,9 @@ xicc *new_xicc(icc *picc);
 		double *outmin, double *outmax);	/* Maximum range of outspace values */		\
 																						\
 																						\
-								/* Return the effective media white and black points */	\
-								/* in the effective PCS colorspace. */					\
+	/* Return the media white and black points */										\
+	/* in the effective PCS colorspace. */												\
+	/* (ie. these will be relative values for relative intent etc.) */					\
 	void    (*efv_wh_bk_points)(struct _icxLuBase *p, double *wht, double *blk, double *kblk);	\
 																						\
 	/* Translate color values through profile */										\
@@ -438,6 +442,7 @@ struct _icxLuLut {
 	rspl	        *outputTable[MXDO];		/* The output lookups */
 
 	/* Inverted RSPLs used to speed ink limit calculation */
+	/* input' -> input */
 	rspl *revinputTable[MXDI];
 
 	/* In/Out lookup flags used for rspl init. callback */
@@ -467,10 +472,10 @@ struct _icxLuLut {
 	/* Auxiliar linearization function - NULL if none */
  	/* Only the used auxiliary chanels need be calculated. */
 	/* ~~ not implimented yet ~~~ */
-	void (*auxlinf)(void *auxlinf_ctx, double inout[MXDI]);
+//	void (*auxlinf)(void *auxlinf_ctx, double inout[MXDI]);
 
 	/* Opaque context for auxlin */
-	void *auxlinf_ctx;
+//	void *auxlinf_ctx;
 
 	/* Temporary icm fwd abs XYZ LuLut used for setting up icx clut */
 	icmLuBase *absxyzlu;
@@ -490,6 +495,11 @@ struct _icxLuLut {
 
 	/* public: */
 
+	/* Note that black inking rules are always defined and provided */
+	/* in dev[] and pcs[] space, even for component functions */
+	/* (ie. the implementation of the inking rule deals with */
+	/*  the dev<->dev' and pcs<->pcs' conversions) */
+	
 	/* Requested direction component lookup */
 	int (*in_abs)  (struct _icxLuLut *p, double *out, double *in);
 	int (*matrix)  (struct _icxLuLut *p, double *out, double *in);
@@ -629,10 +639,6 @@ void icxDefaultLimits(xicc *p, double *tlout, double tlin, double *klout, double
 /* This is the maximum equivalent, that makes sure that */
 /* the calibrated limit is met or exceeded. */
 double icxMaxUnderlyingLimit(struct _xcal *cal, double ilimit);
-
-/* Clip an XYZ value to be within the 2 degree spectrum locus. */
-/* Return nz if clipping occured */
-int icxClipToSpectrumLocus2(double *out, double *in);
 
 /* - - - - - - - - - - */
 

@@ -109,12 +109,6 @@
 #define RDAC_SMOOTH 0.3		/* RAMDAC curve fitting smoothness */
 #define MEAS_RES			/* Measure the RAMNDAC entry size */ 
 
-#if defined(__APPLE__)
-#define DEF_GAMMA 1.8		/* Apple artificial value */
-#else
-#define DEF_GAMMA 2.4		/* Typical CRT gamma */
-#endif
-
 #define VERBOUT stdout
 
 #ifdef DEBUG_PLOT
@@ -158,7 +152,7 @@ typedef struct {
 	/* Target model */
 	gammatype gammat;	/* Transfer curve type */
 	double egamma;		/* Effective Gamma target */
-	double oofff;		/* proportion of output offset vs input offset (default 0.0) */
+	double oofff;		/* proportion of output offset vs input offset (default 1.0) */
 	double gioff;		/* Gamma curve input zero offset */
 	double gooff;		/* Target output offset (normalised to Y max of 1.0) */
 	int nat;			/* Flag - nz if native white target */
@@ -1168,6 +1162,9 @@ static double comp_ct(
 	
 /* =================================================================== */
 
+/* Default gamma */
+double g_def_gamma = 2.4;
+
 void usage(char *diag, ...) {
 	disppath **dp;
 	icoms *icom;
@@ -1241,13 +1238,13 @@ void usage(char *diag, ...) {
 	fprintf(stderr," -L                   Show CCT/CDT rather than VCT/VDT during native white point adjustment\n");
 #endif
 	fprintf(stderr," -b bright            Set the target white brightness in cd/m^2\n");
-	fprintf(stderr," -g gamma             Set the target response curve advertised gamma (Def. %3.1f)\n",DEF_GAMMA);
+	fprintf(stderr," -g gamma             Set the target response curve advertised gamma (Def. %3.1f)\n",g_def_gamma);
 	fprintf(stderr,"                      Use \"-gl\" for L*a*b* curve\n");
 	fprintf(stderr,"                      Use \"-gs\" for sRGB curve\n");
 	fprintf(stderr,"                      Use \"-g709\" for REC 709 curve (should use -a as well!)\n");
 	fprintf(stderr,"                      Use \"-g240\" for SMPTE 240M curve (should use -a as well!)\n");
 	fprintf(stderr," -G gamma             Set the target response curve actual technical gamma\n");
-	fprintf(stderr," -f [degree]          Amount of black level accounted for with output offset (default all input offset)\n");
+	fprintf(stderr," -f [degree]          Amount of black level accounted for with output offset (default all output offset)\n");
 	fprintf(stderr," -a ambient           Use viewing condition adjustment for ambient in Lux\n");
 	fprintf(stderr," -k factor            Amount to try and correct black point hue. Default 1.0, LCD default 0.0\n");
 	fprintf(stderr," -A rate              Rate of blending from neutral to black point. Default %.1f\n",NEUTRAL_BLEND_RATE);
@@ -1264,6 +1261,7 @@ void usage(char *diag, ...) {
 	fprintf(stderr," -K                   Run instrument calibration first (used rarely)\n");
 	fprintf(stderr," -N                   Disable auto calibration of instrument\n");
 	fprintf(stderr," -H                   Use high resolution spectrum mode (if available)\n");
+	fprintf(stderr," -V                   Use adaptive measurement mode (if available)\n");
 #ifdef NEVER
 	fprintf(stderr," -C \"command\"         Invoke shell \"command\" each time a color is set\n");
 #endif
@@ -1304,12 +1302,13 @@ int main(int argc, char *argv[])
 	int proj  = 0;						/* nz if projector mode */
 	int nocal = 0;						/* Disable auto calibration */
 	int highres = 0;					/* Use high res mode if available */
+	int adaptive = 0;					/* Use adaptive mode if available */
 	double temp = 0.0;					/* Color temperature (0 = native) */
 	int planckian = 0;					/* 0 = Daylight, 1 = Planckian color locus */
 	int dovct = 1;						/* Show VXT rather than CXT for adjusting white point */
 	double wpx = 0.0, wpy = 0.0;		/* White point xy (native) */
 	double tbright = 0.0;				/* Target white brightness ( 0.0 == max)  */
-	double gamma = DEF_GAMMA;			/* Advertised Gamma target */
+	double gamma = 0.0;					/* Advertised Gamma target */
 	double egamma = 0.0;				/* Effective Gamma target, NZ if set */
 	double ambient = 0.0;				/* NZ if viewing cond. adjustment to be used (cd/m^2) */
 	double bkcorrect = -1.0;			/* Level of black point correction */ 
@@ -1339,11 +1338,30 @@ int main(int argc, char *argv[])
 	cctx x;								/* Context for calibration solution */
 
 	set_exe_path(argv[0]);				/* Set global exe_path and error_program */
+
+#if defined(__APPLE__)
+	{
+		SInt32 MacVers;
+
+		g_def_gamma = 1.8;
+
+		/* OS X 10.6 uses a nominal gamma of 2.2 */
+		if (Gestalt(gestaltSystemVersion, &MacVers) == noErr) {
+			if (MacVers >= 0x1060) {
+				g_def_gamma = 2.4;
+			}
+		}
+	}
+#else
+	g_def_gamma = 2.4;		/* Typical CRT gamma */
+#endif
+	gamma = g_def_gamma;
+
 	setup_spyd2(NULL);					/* Load firware if available */
 
 	x.gammat = gt_power ;				/* Default gamma type */
 	x.egamma = 0.0;						/* Default effective gamma none */
-	x.oofff = 0.0;						/* Default is all input ofset */
+	x.oofff = 1.0;						/* Default is all output ofset */
 	x.vc = 0;							/* No viewing conditions adjustment */
 	x.svc = NULL;
 	x.dvc = NULL;
@@ -1441,6 +1459,10 @@ int main(int argc, char *argv[])
 			/* High res mode */
 			} else if (argv[fa][1] == 'H') {
 				highres = 1;
+
+			/* Adaptive mode */
+			} else if (argv[fa][1] == 'V') {
+				adaptive = 1;
 
 #ifdef NEVER	/* Doesn't make much sense if VideoLUTs can't be set ? */
 			/* Change color callout */
@@ -1655,7 +1677,7 @@ int main(int argc, char *argv[])
 			} else if (argv[fa][1] == 'f') {
 				fa = nfa;
 				if (na == NULL) {
-					x.oofff = 1.0;
+					x.oofff = 0.0;
 				} else {
 					x.oofff = atof(na);
 					if (x.oofff < 0.0 || x.oofff > 1.0)
@@ -1727,8 +1749,8 @@ int main(int argc, char *argv[])
 	}
 
 	if (docalib) {
-		if ((rv = disprd_calibration(itype, comport, fc, dtype, proj, nocal, disp, blackbg,
-		                               override, patsize, ho, vo, verb, debug)) != 0) {
+		if ((rv = disprd_calibration(itype, comport, fc, dtype, proj, adaptive, nocal, disp,
+		                             blackbg, override, patsize, ho, vo, verb, debug)) != 0) {
 			error("docalibration failed with return value %d\n",rv);
 		}
 	}
@@ -1761,9 +1783,10 @@ int main(int argc, char *argv[])
 	donat = 1;		/* Normally calibrate against native response */
 	if (verify == 2 || doreport == 2)
 		donat = 0;	/* But measure calibrated response of verify or report calibrated */ 
-	if ((dr = new_disprd(&errc, itype, fake ? -99 : comport, fc, dtype, proj, nocal, highres, donat,
-	                     NULL, 0, disp, blackbg, override, ccallout, mcallout, patsize, ho, vo,
-	                     spectral, verb, VERBOUT, debug, "fake" ICC_FILE_EXT)) == NULL)
+	if ((dr = new_disprd(&errc, itype, fake ? -99 : comport, fc, dtype, proj, adaptive, nocal,
+	                     highres, donat, NULL, 0, disp, blackbg, override, ccallout, mcallout,
+	                     patsize, ho, vo, spectral, verb, VERBOUT, debug,
+	                     "fake" ICC_FILE_EXT)) == NULL)
 		error("new_disprd() failed with '%s'\n",disprd_err(errc));
 
 	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
@@ -2058,7 +2081,7 @@ int main(int argc, char *argv[])
 			}
 		}
 		if ((fi = icg->find_kword(icg, 0, "DEGREE_OF_BLACK_OUTPUT_OFFSET")) < 0) {
-			/* Backward compatibility */
+			/* Backward compatibility if value is not present */
 			if (x.gammat == gt_Lab || x.gammat == gt_sRGB)
 				x.oofff = 1.0;
 			else
@@ -3555,7 +3578,7 @@ int main(int argc, char *argv[])
 					0.2,					/* Background relative to reference white */
 					80.0,					/* Display is 80 cd/m^2 */
 			        0.01, x.nwh,			/* 1% flare same white point */
-					0);
+					0, 0);
 				break;
 
 			case gt_Rec709:
@@ -3566,7 +3589,7 @@ int main(int argc, char *argv[])
 					0.2,					/* Background relative to reference white */
 					1000.0/3.1415,			/* Luminance of white in the Image field (cd/m^2) */
 			        0.01, x.nwh,			/* 1% flare same white point */
-					0);
+					0, 0);
 				break;
 
 			default:
@@ -3579,7 +3602,7 @@ int main(int argc, char *argv[])
 			0.2,				/* Background relative to reference white */
 			x.twh[1],			/* Target white level (cd/m^2) */
 	        0.01, x.nwh,		/* 1% flare same white point */
-			0);
+			0, 0);
 
 		/* Compute the normalisation values */
 		x.svc->XYZ_to_cam(x.svc, Jab, x.nwh);		/* Relative white point */

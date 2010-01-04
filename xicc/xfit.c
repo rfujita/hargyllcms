@@ -1639,7 +1639,7 @@ dump_xfit(p);
 		p->opt_ch = -1;
 		p->opt_msk = oc_im;
 		setup_xfit(p, p->wv, p->sa, 0.5, 0.3); 
-		/* Supress the warnings the first time through - it's better to cut off the */
+		/* Suppress the warnings the first time through - it's better to cut off the */
 		/* itterations and move on to the output curve, and worry about it not */
 		/* converging the second time through. */
 #ifdef NODDV

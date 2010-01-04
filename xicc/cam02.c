@@ -101,18 +101,22 @@
 #undef DISABLE_NONLIN		/* Debug - wire rgbp to rgba */
 #undef DISABLE_TTD			/* Debug - disable ttd vector 'tilt' */
 #undef DISABLE_HHKR			/* Debug - disable Helmholtz-Kohlraush */
+#undef DISABLE_BLUECLIP		/* Debug - disable blue clipping  */
 
-#ifndef NEVER
+#define BLUECLIMIT 1.3		/* Blue clipping max ratio of z to x+y */
+
+#ifdef NEVER
 #define NLDLIMIT 0.005		/* Non-linearity lower crossover to straight line */
 #define NLDLSLOPE 400.0		/* Lower slope if NLDLIMIT == 0.0 */
-#define NLDLPOW 1.0			/* Lower power. < 1 improves black->blue problem */
+#define NLDLPOW 2.0			/* Lower power. < 1 improves black->blue problem */
 
 #else	/* Another approach to improve -ve black goes to blue problem ?? */
 
 #define NLDLIMIT 0.0		/* Non-linearity lower crossover to straight line */
-#define NLDLSLOPE 0.001		/* Lower slope if NLDLIMIT == 0.0 */
+#define NLDLSLOPE 0.01		/* Lower slope if NLDLIMIT == 0.0 */
 							/* (Smaller improves black->blue problem) */
-#define NLDLPOW 0.7			/* Lower power. < 1 improves black->blue problem */
+#define NLDLPOW 2.0			/* Lower power. < 1 improves black->blue problem ? */
+
 #endif	/* NEVER */
 
 #define NLULIMIT 1e5		/* Non-linearity upper crossover to straight line */
@@ -123,10 +127,10 @@
 #endif /* ENABLE_SS */
 
 #define DDLLIMIT 0.55		/* ab component -k3:k2 ratio limit (must be < 1.0) */
-//#define DDULIMIT 0.9993		/* ab component k3:k1 ratio limit (must be < 1.0) */
 // NEED 0.9993 to match reference CIECAM02 behaviour within the spectrum locus. */
 // The value 0.60 limits the blue turning black problem though. */
-#define DDULIMIT 0.60		/* ab component k3:k1 ratio limit (must be < 1.0) */
+//#define DDULIMIT 0.9993		/* ab component k3:k1 ratio limit (must be < 1.0) */
+#define DDULIMIT 0.90		/* ab component k3:k1 ratio limit (must be < 1.0) */
 #define SSMINcJ 0.005		/* ab scale cJ minimum value */
 #define JLIMIT 0.005		/* J encoding cutover point straight line (0 - 1.0 range) */
 #define HKLIMIT 0.5			/* Maximum Helmholtz-Kohlraush lift */
@@ -151,7 +155,7 @@ double minj = 1e38, maxj = -1e38;
 static void cam_free(cam02 *s);
 static int set_view(struct _cam02 *s, ViewingCondition Ev, double Wxyz[3],
 	                double La, double Yb, double Lv, double Yf, double Fxyz[3],
-					int hk);
+					int hk, int noclip);
 static int XYZ_to_cam(struct _cam02 *s, double *Jab, double *xyz);
 static int cam_to_XYZ(struct _cam02 *s, double *xyz, double *Jab);
 
@@ -187,7 +191,7 @@ cam02 *new_cam02(void) {
 	s->ddulimit = DDULIMIT;
 	s->ssmincj = SSMINcJ;
 	s->jlimit = JLIMIT;
-	s->hklimit = HKLIMIT;
+	s->hklimit = 1.0 / HKLIMIT;
 
 	/* Set a default viewing condition ?? */
 	/* set_view(s, vc_average, D50, 33, 0.2, 0.0, 0.0, D50, 0); */
@@ -237,7 +241,8 @@ double Lv,		/* Luminance of white in the Viewing/Scene/Image field (cd/m^2) */
 				/* Ignored if Ev is set to other than vc_none */
 double Yf,		/* Flare as a fraction of the reference white (Y range 0.0 .. 1.0) */
 double Fxyz[3],	/* The Flare white coordinates (typically the Ambient color) */
-int hk			/* Flag, NZ to use Helmholtz-Kohlraush effect */
+int hk,			/* Flag, NZ to use Helmholtz-Kohlraush effect */
+int noclip		/* Flag, NZ to not clip to useful gamut before XYZ_to_cam() */
 ) {
 	double tt, t1, t2;
 
@@ -309,6 +314,7 @@ int hk			/* Flag, NZ to use Helmholtz-Kohlraush effect */
 	s->Fxyz[1] = Fxyz[1];
 	s->Fxyz[2] = Fxyz[2];
 	s->hk = hk;
+	s->noclip = noclip;
 
 	/* The rgba vectors */
 	s->Va[0] = 1.0;
@@ -503,10 +509,34 @@ double XYZ[3]
 	xyz[1] = s->Fsc * XYZ[1] + s->Fsxyz[1];
 	xyz[2] = s->Fsc * XYZ[2] + s->Fsxyz[2];
 
-	/* Spectrally sharpened cone responses */
-	rgb[0] =  0.7328 * xyz[0] + 0.4296 * xyz[1] - 0.1624 * xyz[2];
-	rgb[1] = -0.7036 * xyz[0] + 1.6975 * xyz[1] + 0.0061 * xyz[2];
-	rgb[2] =  0.0000 * xyz[0] + 0.0000 * xyz[1] + 1.0000 * xyz[2];
+	/* Try and prevent crazy blue behaviour */
+#ifndef DISABLE_BLUECLIP
+	if (s->noclip == 0) {
+		double lz, lxy;
+
+		lz = xyz[2];
+		lxy = 0.7328/0.1624 * xyz[0] + 0.4296/0.1624 * xyz[1];
+
+		if (lxy > 1e-6 && lz > 1e-6) {
+			lxy = BLUECLIMIT * lxy;		/* Set limit */
+			lxy = 1.0/(lxy * lxy);
+			lz = 1.0/sqrt(lxy + 1.0/(lz * lz));
+		}
+		
+		/* Spectrally sharpened cone responses */
+		rgb[0] =  0.7328 * xyz[0] + 0.4296 * xyz[1] - 0.1624 * lz;
+		rgb[1] = -0.7036 * xyz[0] + 1.6975 * xyz[1] + 0.0061 * lz;
+		rgb[2] =  0.0000 * xyz[0] + 0.0000 * xyz[1] + 1.0000 * lz;
+
+	} else
+#endif /* !DISABLE_BLUECLIP */
+	{
+		/* Spectrally sharpened cone responses */
+		rgb[0] =  0.7328 * xyz[0] + 0.4296 * xyz[1] - 0.1624 * xyz[2];
+		rgb[1] = -0.7036 * xyz[0] + 1.6975 * xyz[1] + 0.0061 * xyz[2];
+		rgb[2] =  0.0000 * xyz[0] + 0.0000 * xyz[1] + 1.0000 * xyz[2];
+	}
+
 	
 	/* Chromaticaly transformed sample value */
 	rgbc[0] = s->Drgb[0] * rgb[0];
@@ -750,8 +780,8 @@ double XYZ[3]
  	/* Helmholtz-Kohlraush effect */
 	if (s->hk && J < 1.0) {
 		double kk = C/300.0 * sin(DBL_PI * fabs(0.5 * (h - 90.0))/180.0);
-		if (kk > s->hklimit)		/* Limit kk to a reasonable range */
-			kk = s->hklimit;
+		if (kk > 1e-6) 	/* Limit kk to a reasonable range */
+			kk = 1.0/(s->hklimit + 1.0/kk);
 		JJ = J + (1.0 - (J > 0.0 ? J : 0.0)) * kk;
 		TRACE(("JJ = %f from J = %f, kk = %f\n",JJ,J,kk))
 	}
@@ -847,8 +877,8 @@ double Jab[3]
  	/* Undo Helmholtz-Kohlraush effect */
 	if (s->hk && J < 1.0) {
 		double kk = C/300.0 * sin(DBL_PI * fabs(0.5 * (h - 90.0))/180.0);
-		if (kk > s->hklimit)		/* Limit kk to a reasonable range */
-			kk = s->hklimit;
+		if (kk > 1e-6) 	/* Limit kk to a reasonable range */
+			kk = 1.0/(s->hklimit + 1.0/kk);
 		J = (JJ - kk)/(1.0 - kk);
 		if (J < 0.0)
 			J = JJ - kk;

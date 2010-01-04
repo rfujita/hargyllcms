@@ -36,20 +36,21 @@
 #undef TROUBLE2		/* Test trouble spot colors Jab -> XYZ -> Jab */
 #undef SPECIAL		/* Special exploration code */
 
-#define LOCUSTEST	/* ** Test spectrum locus points */
-#define LOCUSRAND	/* ** Test random spectrum locus points */
+#define LOCUSTEST	/* [def] ** Test spectrum locus points */
+#define LOCUSRAND	/* [def] ** Test random spectrum locus points */
 
-#define INVTEST		/* ** -100 -> 100 XYZ cube to Jab to XYZ */
-#undef INVTEST1		/* Single value */
-#undef INVTEST2		/* Powell search for invers */
+#define INVTEST		/* [def] ** -100 -> 100 XYZ cube to Jab to XYZ */
+#undef INVTEST1		/* [undef] Single value */
+#undef INVTEST2		/* [undef] Powell search for invers */
 
-#define TESTINV		/* ** Jab cube to XYZ to Jab */
-#undef TESTINV1		/* Single Jab value */
-#undef TESTINV2		/* J = 0 test values */
+#define TESTINV		/* [def] ** Jab cube to XYZ to Jab */
+#undef TESTINV1		/* [undef] Single Jab value */
+#undef TESTINV2		/* [undef] J = 0 test values */
 
-#define TRES 41		/* Grid resolution */
-//#define TRES 11		/* Grid resolution */
-#define USE_HK 0	/* Use Helmholtz-Kohlraush in testing */
+//#define TRES 41		/* Grid resolution */
+#define TRES 11		/* Grid resolution */
+#define USE_HK 1	/* Use Helmholtz-Kohlraush in testing */
+#define NOCAMCLIP 1	/* Don't clip before XYZ2Jab conversion */
 #undef EXIT_ON_ERROR
 
 #define MAX_REF_ERR 0.1	/* Maximum permitted error to reference transform in delta Jab */
@@ -402,7 +403,8 @@ main(void) {
 			0.0,		/* Luminance of white in image - not used */
 			tFlair[c],	/* Flare as a fraction of the reference white (Y range 0.0 .. 1.0) */
 			twhite[c],	/* The Flare color coordinates (typically the Ambient color) */
-			USE_HK		/* use Helmholtz-Kohlraush flag */ 
+			USE_HK,		/* use Helmholtz-Kohlraush flag */ 
+			NOCAMCLIP
 		);
 		cam->set_view(
 			cam,
@@ -413,7 +415,8 @@ main(void) {
 			0.0,		/* Luminance of white in image - not used */
 			tFlair[c],	/* Flare as a fraction of the reference white (Y range 0.0 .. 1.0) */
 			twhite[c],	/* The Flare color coordinates (typically the Ambient color) */
-			USE_HK		/* use Helmholtz-Kohlraush flag */ 
+			USE_HK,		/* use Helmholtz-Kohlraush flag */ 
+			NOCAMCLIP
 		);
 		camr->nldlimit = cam->nldlimit;
 		camr->jlimit = cam->jlimit;
@@ -554,7 +557,8 @@ main(void) {
 			0.0,		/* Luminance of white in image - not used */
 			0.00,		/* Flare as a fraction of the reference white (Y range 0.0 .. 1.0) */
 			sp_white[c],/* The Flare color coordinates (typically the Ambient color) */
-			USE_HK		/* use Helmholtz-Kohlraush flag */ 
+			USE_HK,		/* use Helmholtz-Kohlraush flag */ 
+			NOCAMCLIP
 		);
 
 		cam->set_view(
@@ -566,7 +570,8 @@ main(void) {
 			0.0,		/* Luminance of white in image - not used */
 			0.00,		/* Flare as a fraction of the reference white (Y range 0.0 .. 1.0) */
 			sp_white[c],/* The Flare color coordinates (typically the Ambient color) */
-			USE_HK		/* use Helmholtz-Kohlraush flag */ 
+			USE_HK,		/* use Helmholtz-Kohlraush flag */ 
+			NOCAMCLIP
 		);
 
 		camr->nldlimit = cam->nldlimit;
@@ -688,7 +693,8 @@ main(void) {
 			0.0,		/* Luminance of white in image - not used */
 			0.00,		/* Flare as a fraction of the reference white (Y range 0.0 .. 1.0) */
 			white[c],	/* The Flare color coordinates (typically the Ambient color) */
-			USE_HK		/* use Helmholtz-Kohlraush flag */ 
+			USE_HK,		/* use Helmholtz-Kohlraush flag */ 
+			NOCAMCLIP
 		);
 		
 		cam->set_view(
@@ -700,7 +706,8 @@ main(void) {
 			0.0,		/* Luminance of white in image - not used */
 			0.00,		/* Flare as a fraction of the reference white (Y range 0.0 .. 1.0) */
 			white[c],	/* The Flare color coordinates (typically the Ambient color) */
-			USE_HK		/* use Helmholtz-Kohlraush flag */ 
+			USE_HK,		/* use Helmholtz-Kohlraush flag */ 
+			NOCAMCLIP
 		);
 		
 		/* Make reference return error where it's going to disagree with implementation */
@@ -920,7 +927,8 @@ main(void) {
 				0.0,		/* Luminance of white in image - not used */
 				0.01,		/* Flare as a fraction of the reference white (Y range 0.0 .. 1.0) */
 				white[c],	/* The Flare color coordinates (typically the Ambient color) */
-				USE_HK		/* use Helmholtz-Kohlraush flag */ 
+				USE_HK,		/* use Helmholtz-Kohlraush flag */ 
+				NOCAMCLIP
 			);
 		
 #ifdef INVTEST1
@@ -1096,7 +1104,8 @@ main(void) {
 				0.0,		/* Luminance of white in image - not used */
 				0.01,		/* Flare as a fraction of the reference white (Y range 0.0 .. 1.0) */
 				white[c],	/* The Flare color coordinates (typically the Ambient color) */
-				USE_HK		/* use Helmholtz-Kohlraush flag */ 
+				USE_HK,		/* use Helmholtz-Kohlraush flag */ 
+				NOCAMCLIP
 			);
 		
 #ifdef TESTINV1

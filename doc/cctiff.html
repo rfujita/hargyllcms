@@ -55,13 +55,9 @@ fast result against precise, and report differences.<br>
  style="font-family: monospace;">&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Override the
-default CLUT resolution<br>
-</span></small><small><span style="font-family: monospace;">&nbsp;</span><a
- style="font-family: monospace;" href="#o">-o <span
- style="font-style: italic;">intent</span></a><span
- style="font-family: monospace;">
-&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp; Choose last profiles
-intent<br>
+default CLUT resolution</span></small><small><span
+ style="font-family: monospace;"></span><span
+ style="font-family: monospace;"><br>
 </span></small><small><span style="font-family: monospace;">&nbsp;</span><a
  style="font-family: monospace;" href="#t">-t n<span
  style="font-style: italic;"></span></a><span
@@ -110,8 +106,15 @@ Then for each profile in the linked sequence:<br
  style="font-family: monospace;">
 <span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; s =
-saturation, a = absolute colorimetric</span><span
- style="font-family: monospace;"></span></small><small><span
+saturation, a = absolute colorimetric<br>
+</span></small><small><span style="font-family: monospace;">&nbsp; </span><a
+ style="font-family: monospace;" href="cctiff.html#o">-o order<span
+ style="font-style: italic;"></span></a><span
+ style="font-family: monospace;">
+&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; n =
+normal (priority: lut &gt; matrix &gt; monochrome)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+r = reverse (priority: monochrome &gt; matrix &gt; lut)</span></small><small><span
  style="font-family: monospace;"></span><br
  style="font-family: monospace;">
 <span style="font-family: monospace;">&nbsp; </span><a
@@ -134,7 +137,7 @@ Calibration direction</span><br style="font-family: monospace;">
 <span style="font-family: monospace;">&nbsp; &nbsp; &nbsp; &nbsp;
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
 &nbsp;
-&nbsp; f = forward (default), b = backwards</span><span
+&nbsp; f = forward cal. (default), b = backwards cal.</span><span
  style="font-family: monospace;"></span><span
  style="font-family: monospace;"></span></small><small><span
  style="font-family: monospace;"></span><br
@@ -209,10 +212,6 @@ profile.<br>
 and <span style="font-weight: bold;">-r</span> options are intended to
 aid debugging.<br>
 <br>
-<a name="o"></a>The <span style="font-weight: bold;">-o</span>
-parameter is for backwards compatibility, and
-sets the intent of the last profile in the chain.<br>
-<br>
 <a name="t"></a><span style="font-weight: bold;"></span>Some
 colorspaces can be encoded in more than one way.
 If there is a choice, the choice should be specified the <span
@@ -264,6 +263,17 @@ parameters
 selects the intent for the following device profile. Normally
 the same intent should be used for all device profiles, but other
 combinations allow special uses such as mixed proofing workflows.<br>
+<br>
+<a name="o"></a>The <span style="font-weight: bold;">-o</span>
+parameter
+changes the order the profiles tags are searched in. A profile is
+allowed to contain more than the minimum number of
+elements or table needed to describe a certain transform, and may
+contain redundant descriptions.
+&nbsp;By default, lut based table information will be used first if
+present, followed by
+matrix/shaper information, and only using monochrome information if it
+is all that is present. <b>-o r</b> reverses this order. <br>
 <br>
 <a name="p1"></a>The file that will be the source of the ICC profile.
 This can be either an ICC profile or a TIFF file that contains an

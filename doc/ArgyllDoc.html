@@ -11,14 +11,15 @@
 </head>
 <body>
 <h1>
-Argyll CMS documentation index (V1.1.0 RC2)<br>
+Argyll CMS documentation index (V1.1.0 RC3)<br>
 </h1>
-Date:&nbsp;&nbsp; 4th. December 2009
+Date:&nbsp;&nbsp; 4th. January 2010
 <br>
 Author: Graeme Gill
 <h2><u><a name="Intro"></a>Introduction</u></h2>
-Argyll is an open source, ICC compatible color management
-system. It supports accurate ICC profile creation for scanners, cameras
+ArgyllCMS is an ICC compatible color management
+system, available as Open Source. It supports accurate ICC profile
+creation for scanners, cameras
 and film recorders, and calibration and profiling of displays and RGB
 &amp; CMYK
 printers.
@@ -40,7 +41,7 @@ Device color gamuts can also be viewed and compared using a VRML
 viewer. Comprehensive documentation is provided for each utility, and a
 general guide to using the tools for typical color management tasks is
 also available. A mailing list provides support for more advanced usage.<br>
-<p>This is Version 1.1.0 RC2, a feature and bug fix release
+<p>This is Version 1.1.0 RC3, a feature and bug fix release
 following the V1.0.4 release on 30th June 2009. The first public
 release of icclib was in November 1998, and of Argyll
 was in July 2000. Code
@@ -146,10 +147,8 @@ spot reflective/emissive, XY table reflective spectrometer&nbsp; .<br>
 &nbsp; &nbsp; &nbsp;
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; - spot
 reflective/emissive/transmissive, XY table reflective spectrometer.<br>
-&nbsp; &nbsp; <a href="instruments.html#i1p">Eye-One Pro</a> &nbsp;
-&nbsp; &nbsp;
-&nbsp; &nbsp; &nbsp;
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; -
+&nbsp; &nbsp; <a href="instruments.html#i1p">Eye-One Pro</a> "EFI
+ES-1000" &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; -
 spot and "swipe" reflective/emissive spectrometer.<br>
 &nbsp; &nbsp; <a href="instruments.html#i1m">Eye-One Monitor</a>
 &nbsp;
@@ -271,7 +270,13 @@ as
 detailed
 in the <a href="License.txt">License.txt</a> file. Documentation is
 licensed under the terms of the GNU Free Documentation License, Version
-1.3.<br>
+1.3. The author asserts his moral rights over this material in
+relationship to the attribution and integrity of these works. In
+particular, if these works are modified in a way that materially
+changes their functionality, then the modified works should be renamed
+in a way that clearly distinguishes them from "Argyll" or "ArgyllCMS"
+so that the effects of such changes do not reflect on the original
+works integrity or the original authors reputation.<br>
 </p>
 <p>The utility spectro/spec2cie.c is Copyright 2005 Gerhard Fuernkranz,
 and is
@@ -296,8 +301,9 @@ details. <br>
 <p>The Win32 USB library libusb-win32, included in this distribution,
 is copyright Stephan Meyer,
 Johannes Erdfelt and Thomas Sailer, and is licensed under the GNU LGPL
-Version 2 (the DLL)&nbsp;
-and GPL (the drivers, services, installer). See&nbsp;
+Version 2 or latter (the DLL)&nbsp;
+and GNU GPL Version 2 or later (the drivers, services, installer).
+See&nbsp;
 libusbw/License.txt, libusbw/COPYING_LGPL.txt and
 libusbw/COPYING_GPL.txt for details.<br>
 </p>
@@ -309,8 +315,15 @@ in <span style="font-weight: bold;">jcnf</span>/, and the ucmm library
 in <span style="font-weight: bold;">ucmm</span>/ are
 Copyright 1995 - 2009 Graeme W. Gill, and available
 according to the "MIT" license granted in the icc/License.txt and
-cgats/License.txt files, and the source files in jcnf/ and ucmm/.<br>
-<br>
+cgats/License.txt files, and the licenses at the top of ucmm/ucmm.c and
+jcnf/jcnf.c.<br>
+</p>
+<p>The yajl library in <span style="font-weight: bold;">jcnf/yajl</span>
+is Copyright 2007-2009, Lloyd Hilaiel and is licensed according to the
+Berkeley-style License granted in the jcnf/yajl/COPYING files. The yajl
+library has been repackaged and modified slightly for convenience.<br>
+</p>
+<p>
 The TIFF library included in this distribution for convenience, has
 its
 own copyright and license detailed in tiff/COPYRIGHT (an "MIT"/"BSD"
@@ -497,6 +510,9 @@ targets</a><br>
 <a href="calvschar.html">What's the difference between Calibration and
 Characterization ?</a><br>
 <span style="font-family: monospace;"></span><br>
+<a href="CrushedDisplyBlacks.html">My blacks get crushed on my display
+- why ? How do I fix it ?</a><br>
+<br>
 <h2><b><u><font size="+2"><a name="CatList"></a>Main Utilities by
 category:</font></u></b></h2>
 <h3>Calibrating devices<br>

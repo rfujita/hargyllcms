@@ -2065,9 +2065,9 @@ double m21fsm		/* Inverse 3D RSPL smoothing level, 0.0 = none */
 				/* hue direction. */
 				opts.m2[0][0] = opts.m2[1][1] = 1.0;		/* Default matrix */
 				opts.m2[0][1] = opts.m2[1][0] = 0.0;
-				nv[0] = smp[ix].sv[0] + 1.0;	/* Point offset in L direction */
-				nv[1] = smp[ix].sv[1];
-				nv[2] = smp[ix].sv[2];
+				nv[0] = smp[i].sv[0] + 1.0;	/* Point offset in L direction */
+				nv[1] = smp[i].sv[1];
+				nv[2] = smp[i].sv[2];
 				icmMul3By3x4(nv, opts.mm, nv);	/* Current transformation of it */
 				ch = nv[1] * nv[1] + nv[2] * nv[2];		/* Magnitude of L offset in [1][2] */
 				if (ch > 1e-6) {		/* There is a sense of L direction */

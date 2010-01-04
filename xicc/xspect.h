@@ -134,6 +134,7 @@ struct _xsp2cie {
 	void (*del)(struct _xsp2cie *p);
 
 	/* Convert (and possibly fwa correct) reflectance spectrum */
+	/* Note that XYZ is 0..1 range */
 	void (*convert) (struct _xsp2cie *p,	/* this */
 	                 double *out,			/* Return XYZ or D50 Lab value */
 	                 xspect *in				/* Spectrum to be converted, normalised by norm */
@@ -141,6 +142,7 @@ struct _xsp2cie {
 
 	/* Convert and also return (possibly corrected) reflectance spectrum */
 	/* Spectrum will be same wlength range and readings as input spectrum */
+	/* Note that XYZ is 0..1 range */
 	void (*sconvert) (struct _xsp2cie *p,	/* this */
 	                 xspect *sout,			/* Return corrected refl. spectrum (may be NULL) */
 	                 double *out,			/* Return XYZ or D50 Lab value (may be NULL) */

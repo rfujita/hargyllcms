@@ -66,6 +66,7 @@
 #define ENABLE_NONVCAL	/* Enable saving calibration state between program runs in a file */
 #define CALTOUT (24 * 60 * 60)	/* Calibration timeout in seconds */
 #define MAXSCANTIME 15.0	/* MAximum scan time in seconds */
+#define SW_THREAD_TIMEOUT	(10 * 60.0) 	/* Switch read thread timeout */
 
 #undef SELF_CONT		/* Use self contained spectral->XYZ, else use xicc */
 #define SINGLE_READ		/* Use a single USB read for scan to eliminate latency issues. */
@@ -274,7 +275,6 @@ void del_i1proimp(i1pro *p) {
 		}
 
 		/* i1pro_terminate_switch() seems to fail on a rev A & Rev C ?? */
-
 		if (m->th != NULL) {		/* Terminate switch monitor thread */
 			m->th_term = 1;			/* Tell thread to exit on error */
 			i1pro_terminate_switch(p);
@@ -5677,7 +5677,7 @@ i1pro_code i1pro_create_hr(i1pro *p) {
 				double we;
 
 				cwl = m->wl_short2 + (double)j * (m->wl_long2 - m->wl_short2)/(m->nwav2-1.0);
-				rwl = wl - cwl;			/* relative wavelgth to filter */
+				rwl = wl - cwl;			/* relative wavelength to filter */
 
 				if (fabs(w1 - cwl) > fshmax && fabs(w2 - cwl) > fshmax)
 					continue;		/* Doesn't fall into this filter */
@@ -5731,7 +5731,7 @@ i1pro_code i1pro_create_hr(i1pro *p) {
 
 				coeff2[j][m->mtx_nocoef2[j]].ix = i;
 				coeff2[j][m->mtx_nocoef2[j]++].we = we; 
-//printf("~1 filter %d, cwl %f, rwl %f, ix %d, we %f\n",j,cwl,rwl,i,we);
+//printf("~1 filter %d, cwl %f, rwl %f, ix %d, we %f, nocoefs %d\n",j,cwl,rwl,i,we,m->mtx_nocoef2[j]-1);
 			}
 		}
 
@@ -6330,7 +6330,6 @@ i1pro_code i1pro_conv2XYZ(
 		vals[i].sp.spec_n = 0;
 		vals[i].duration = 0.0;
 	
-		vals[i].sp.norm = 1.0;
 		vals[i].sp.spec_n = nwl;
 		vals[i].sp.spec_wl_short = wl_short;
 		vals[i].sp.spec_wl_long = m->wl_long;
@@ -6339,10 +6338,12 @@ i1pro_code i1pro_conv2XYZ(
 			for (j = six, k = 0; j < m->nwav; j++, k++) {
 				vals[i].sp.spec[k] = specrd[i][j] * sms;
 			}
+			vals[i].sp.norm = 1.0;
 		} else {
 			for (j = six, k = 0; j < m->nwav; j++, k++) {
 				vals[i].sp.spec[k] = 100.0 * specrd[i][j] * sms;
 			}
+			vals[i].sp.norm = 100.0;
 		}
 
 		/* Set the XYZ */
@@ -6353,6 +6354,9 @@ i1pro_code i1pro_conv2XYZ(
 		} else {
 			conv->convert(conv, vals[i].XYZ, &vals[i].sp);
 			vals[i].XYZ_v = 1;
+			vals[i].XYZ[0] *= 100.0;
+			vals[i].XYZ[1] *= 100.0;
+			vals[i].XYZ[2] *= 100.0;
 		}
 
 #else	/* SELF_CONT */
@@ -6381,7 +6385,7 @@ i1pro_code i1pro_conv2XYZ(
 			for (norm = 0.0, j = 0; j < 36; j++) {
 				norm += obsv[0][1][j] * illum_D50[j];
 			}
-			norm = 100.0/norm;
+			norm = 100.0/norm;		/* Return value is 0 .. 100 */
 			
 			for (k = 0; k < 3; k++)
 				vals[i].XYZ[k] = 0.0;
@@ -6726,7 +6730,7 @@ int i1pro_switch_thread(void *pp) {
 	i1proimp *m = (i1proimp *)p->m;
 	DBG((dbgo,"Switch thread started\n"))
 	for (nfailed = 0;nfailed < 5;) {
-		rv = i1pro_waitfor_switch_th(p, 600.0);
+		rv = i1pro_waitfor_switch_th(p, SW_THREAD_TIMEOUT);
 		if (m->th_term)
 			break;
 		if (rv == I1PRO_INT_BUTTONTIMEOUT) {

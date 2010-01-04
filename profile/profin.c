@@ -47,9 +47,9 @@
 #define DOB2A			/* Create B2A table as well (not implemented) */
 #define NO_B2A_PCS_CURVES       /* PCS curves seem to make B2A less accurate. Why ? */
 #define USE_CAM_CLIP_OPT        /* Clip out of gamut in CAM space rather than XYZ or L*a*b* */
-#define CAM_CLIPLOCUS       /* When converting to CAM, clip to the spectrum locus first */
 #undef USE_EXTRA_FITTING       /* Turn on data point error compensation */
 #define USE_2ASS_SMOOTHING      /* Turn on Gaussian smoothing */
+#undef WARN_CLUT_CLIPPING	/* Print warning if setting clut clips */
 
 /*
    Basic algorithm outline:
@@ -845,11 +845,6 @@ make_input_icc(
 #else
 				warning("!!!! USE_CAM_CLIP_OPT in profout.c is off !!!!");
 #endif
-#ifdef CAM_CLIPLOCUS
-				flags |= ICX_CAM_LOCUSCLIP;
-#endif
-
-	
 				if ((AtoB = wr_xicc->get_luobj(wr_xicc, flags, icmFwd,
 				                  icmDefaultIntent,
 				                  wantLab ? icSigLabData : icSigXYZData,
@@ -907,8 +902,10 @@ make_input_icc(
 			if (cx.verb) {
 				printf("\n");
 			}
+#ifdef WARN_CLUT_CLIPPING
 			if (wr_icco->warnc)
 				warning("Values clipped in setting LUT");
+#endif /* WARN_CLUT_CLIPPING */
 
 			if (verb)
 				printf("Done B to A table\n");

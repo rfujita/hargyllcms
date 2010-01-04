@@ -649,6 +649,7 @@ main(int argc, char *argv[]) {
 	} else if (inking == 3) {	/* Use ramp  */
 		ink.k_rule = locus ? icxKluma5 : icxKluma5k;	/* Locus or value target */
 		ink.c.Ksmth = ICXINKDEFSMTH;	/* Default curve smoothing */
+		ink.c.Kskew = ICXINKDEFSKEW;	/* default curve skew */
 		ink.c.Kstle = 0.0;
 		ink.c.Kstpo = 0.0;
 		ink.c.Kenpo = 1.0;
@@ -661,6 +662,7 @@ main(int argc, char *argv[]) {
 	} else if (inking == 6) {	/* Use specified curve */
 		ink.k_rule = locus ? icxKluma5 : icxKluma5k;	/* Locus or value target */
 		ink.c.Ksmth = ICXINKDEFSMTH;	/* Default curve smoothing */
+		ink.c.Kskew = ICXINKDEFSKEW;	/* default curve skew */
 		ink.c.Kstle = Kstle;
 		ink.c.Kstpo = Kstpo;
 		ink.c.Kenpo = Kenpo;
@@ -669,12 +671,14 @@ main(int argc, char *argv[]) {
 	} else {				/* Use dual curves */
 		ink.k_rule = locus ? icxKl5l : icxKl5lk;	/* Locus or value target */
 		ink.c.Ksmth = ICXINKDEFSMTH;	/* Default curve smoothing */
+		ink.c.Kskew = ICXINKDEFSKEW;	/* default curve skew */
 		ink.c.Kstle = Kstle;
 		ink.c.Kstpo = Kstpo;
 		ink.c.Kenpo = Kenpo;
 		ink.c.Kenle = Kenle;
 		ink.c.Kshap = Kshap;
 		ink.x.Ksmth = ICXINKDEFSMTH;
+		ink.x.Kskew = ICXINKDEFSKEW;
 		ink.x.Kstle = Kstle1;
 		ink.x.Kstpo = Kstpo1;
 		ink.x.Kenpo = Kenpo1;
@@ -836,14 +840,15 @@ main(int argc, char *argv[]) {
 		double xx[XRES];
 		double yy[6][XRES];
 #ifdef HACK_PLOT
+		/* Plot some other slice */
 		double start[3] = { 91.069165, -13.555080, 85.608633 };
 		double end[3] = { 8.602831, -3.112174, 12.541111 };
 #else
-		double start[3] = { 100.0, 0.0, 0.0 };
-		double end[3] = { 0.0, 0.0, 0.0 };
-#endif
-
 		/* Plot from white to black */
+		double start[3], end[3];
+		luo->efv_wh_bk_points(luo, start, end, NULL);
+
+#endif
 		for (i = 0; i < XRES; i++) {
 			double ival = (double)i/(XRES-1.0);
 
@@ -856,43 +861,44 @@ main(int argc, char *argv[]) {
 			if (invert) {
 				if ((rv = luo->inv_lookup(luo, out, in)) > 1)
 					error ("%d, %s",xicco->errc,xicco->err);
+//printf("~1 %f %f %f -> %f %f %f %f\n", in[0], in[1], in[2], out[0], out[1], out[2], out[3]);
 			} else {
 				if ((rv = luo->lookup(luo, out, in)) > 1)
 					error ("%d, %s",xicco->errc,xicco->err);
 			}
 
-			xx[i] = in[0];
+			xx[i] = 100.0 * ival; 
 			for (j = 0; j < outn; j++)
 				yy[j][i] = 100.0 * out[j];
 		}
 
 		/* plot order: Black Red Green Blue Yellow Purple */
 		if (outs == icSigRgbData) {
-			do_plot6(xx, NULL, yy[0], yy[1], yy[2], NULL, NULL, -XRES);
+			do_plot6(xx, NULL, yy[0], yy[1], yy[2], NULL, NULL, XRES);
 
 		} else if (outs == icSigCmykData) {
-			do_plot6(xx, yy[3], yy[1], NULL, yy[0], yy[2], NULL, -XRES);
+			do_plot6(xx, yy[3], yy[1], NULL, yy[0], yy[2], NULL, XRES);
 
 		} else {
 		
 			switch(outn) {
 				case 1:
-					do_plot6(xx, yy[0], NULL, NULL, NULL, NULL, NULL, -XRES);
+					do_plot6(xx, yy[0], NULL, NULL, NULL, NULL, NULL, XRES);
 					break;
 				case 2:
-					do_plot6(xx, yy[0], yy[1], NULL, NULL, NULL, NULL, -XRES);
+					do_plot6(xx, yy[0], yy[1], NULL, NULL, NULL, NULL, XRES);
 					break;
 				case 3:
-					do_plot6(xx, yy[0], yy[1], yy[2], NULL, NULL, NULL, -XRES);
+					do_plot6(xx, yy[0], yy[1], yy[2], NULL, NULL, NULL, XRES);
 					break;
 				case 4:
-					do_plot6(xx, yy[0], yy[1], yy[2], yy[3], NULL, NULL, -XRES);
+					do_plot6(xx, yy[0], yy[1], yy[2], yy[3], NULL, NULL, XRES);
 					break;
 				case 5:
-					do_plot6(xx, yy[0], yy[1], yy[2], yy[3], yy[4], NULL, -XRES);
+					do_plot6(xx, yy[0], yy[1], yy[2], yy[3], yy[4], NULL, XRES);
 					break;
 				case 6:
-					do_plot6(xx, yy[0], yy[1], yy[2], yy[3], yy[4], yy[5], -XRES);
+					do_plot6(xx, yy[0], yy[1], yy[2], yy[3], yy[4], yy[5], XRES);
 					break;
 			}
 		}

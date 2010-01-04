@@ -69,7 +69,8 @@ The proprietary NVidia TwinView and ATI MergeFB extensions do not
 currently support access to the individual screen Video LUTs, so
 calibration of
 each screen independently is impossible if either of these extensions
-are running. You can try doing a calibration for the screens that do
+are running. You can switch to using Xinerama to solve this problem, or
+you can try doing a calibration for the screens that do
 have accessible Video LUTs with these proprietary extensions, or ignore
 calibration and rely purely on display profiling. Use the dispwin
 utility to figure out what works on your system. The NVidia ATI binary
@@ -84,7 +85,7 @@ perhaps you should contact them and urge them to fix the problems with
 Video LUT access in their proprietary multi-monitor extensions and
 XRandR implementation,
 bringing their support for multi-monitors on X11 up to the same
-standards as other operating systems. Urge them to add full and correct
+standards as other operating systems. Ask them to add full and correct
 support for the
 XRandR V1.2 extension.<br>
 <br>

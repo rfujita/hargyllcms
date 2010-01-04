@@ -14,7 +14,40 @@
 </head>
 <body>
 <h1> Summary of Argyll CMS Changes since last release</h1>
-<br>
+<h3>For detailed change list please see the log.txt file.</h3>
+<h1>[V1.1.0 RC2 -&gt; V1.1.0 RC3]</h1>
+<ul>
+  <li>Improve XYZ B2A table quality by scaling PCS range.</li>
+  <li>Fix bugs and make improvements to black generation rules (-kp
+etc). Improves smoothness of black generation for some profiles, plus
+updated tutorial examples to reflect the fixes and improvements. This
+change will invalidate previous -kp settings for a particular profile.<br>
+  </li>
+  <li>Changed profile/colprof to generate matrix tags for Display XYZ
+PCS cLUT profiles, to improve compatibility with other CMMs.<br>
+By default (-ax) the matrix tags will be a dummy transform that swaps
+red and green, while using -aX will create real matrix tags.</li>
+  <li>Fixed bug in i1pro driver that subtly affected accuracy.</li>
+  <li>Added -V option to dispcal and dispread to allow use of i1pro
+adaptive mode to give better low level consistency.</li>
+  <li>Changed targen so that it doesn't slow down as badly when a very
+large number of fixed points are used together with full spread points.<br>
+  </li>
+  <li>Changed dispcal to default to -f 1.0 (assume black is all output
+offset) to make it work in more sympathy to a typical display response.
+Also changed default gamma to 2.4 for OS X 10.6 systems.<br>
+  </li>
+  <li>Changed chartread strip reading mode to allow navigating about
+the strips, saving a partially read chart, and resuming a partially
+read chart.<br>
+  </li>
+  <li>Modified xicc/cam02 to clip the blue to avoid crazy behavior
+outside the spectrum locus.<br>
+  </li>
+  <li>Fixed bug in Spyder 3 driver that can cause readings to be scaled
+by a factor of 16.<br>
+  </li>
+</ul>
 <h1>[V1.1.0 RC1 -&gt; V1.1.0 RC2]</h1>
 <ul>
   <li>Reworked gamut mapping to address problems found with RC1.

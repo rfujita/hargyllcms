@@ -77,8 +77,6 @@ double *in			/* Vector of input values */
 	rv |= ((icmLuMatrix *)p->plu)->fwd_abs((icmLuMatrix *)p->plu, out, in);
 
 	if (p->pcs == icxSigJabData) {
-		if (p->camlocusclip)
-			icxClipToSpectrumLocus2(out, out);
 		p->cam->XYZ_to_cam(p->cam, out, out);
 	}
 	return rv;
@@ -295,7 +293,8 @@ int                   dir			/* 0 = fwd, 1 = bwd */
 		else
 			xicc_enum_viewcond(xicp, &p->vc, -1, NULL, 0, NULL);	/* Use a default */
 		p->cam = new_icxcam(cam_default);
-		p->cam->set_view(p->cam, p->vc.Ev, p->vc.Wxyz, p->vc.La, p->vc.Yb, p->vc.Lv, p->vc.Yf, p->vc.Fxyz, XICC_USE_HK);
+		p->cam->set_view(p->cam, p->vc.Ev, p->vc.Wxyz, p->vc.La, p->vc.Yb, p->vc.Lv, p->vc.Yf,
+		                 p->vc.Fxyz, XICC_USE_HK, XICC_NOCAMCL);
 	} else {
 		p->cam = NULL;
 	}
@@ -784,6 +783,9 @@ int                quality			/* Quality metric, 0..3 */
 		os.optdim = ((os.optdim - 9)/3) + 9;
 	}
 
+	if (os.verb)
+		printf("Creating matrix and curves...\n"); 
+
 	if (powell(&rerr, os.optdim, os.v, os.sa, stopon, maxits,
 	           mxoptfunc, (void *)&os, mxprogfunc, (void *)&os) != 0)
 		warning("Powell failed to converge, residual error = %f",rerr);
@@ -946,7 +948,9 @@ else
 			}
 		}
 
-		if (h->deviceClass == icSigDisplayClass
+		/* Absolute luminance tag */
+		if (flags & ICX_WRITE_WBL
+		 && h->deviceClass == icSigDisplayClass
 		 && dispLuminance > 0.0) {
 			icmXYZArray *wo;
 			if ((wo = (icmXYZArray *)icco->read_tag(
@@ -974,7 +978,8 @@ else
 		}
 
 		/* Write white and black tags */
-		if (flags & ICX_SET_WHITE) { /* White Point Tag: */
+		if ((flags & ICX_WRITE_WBL)
+		 && (flags & ICX_SET_WHITE)) { /* White Point Tag: */
 			icmXYZArray *wo;
 			if ((wo = (icmXYZArray *)icco->read_tag(
 			           icco, icSigMediaWhitePointTag)) == NULL)  {
@@ -999,7 +1004,8 @@ else
 			if (flags & ICX_VERBOSE)
 				printf("White point XYZ = %f %f %f\n",wp[0],wp[1],wp[2]);
 		}
-		if (flags & ICX_SET_BLACK) { /* Black Point Tag: */
+		if ((flags & ICX_WRITE_WBL)
+		 && (flags & ICX_SET_BLACK)) { /* Black Point Tag: */
 			icmXYZArray *wo;
 			if ((wo = (icmXYZArray *)icco->read_tag(
 			           icco, icSigMediaBlackPointTag)) == NULL)  {

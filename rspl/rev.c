@@ -53,6 +53,17 @@
 
  */
 
+/* PROBLEMS:
+
+	Sometimes the aux locus doesn't correspond exactly to
+	the inversion :- ie. one locus segment is returned,
+	yet the inversion can't return a solution with
+	a particular aux target that lies within that segment.
+	(1150 near black, k ~= 0.4).
+
+
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -518,7 +529,7 @@ rev_interp_rspl(
 	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 	/* If hinted that we will not need to clip, look for exact solution. */
 	if (!(flags & RSPL_WILLCLIP)) {
-		DBG(("Trying exact search\n"));
+		DBG(("Hint we won't clip, so trying exact search\n"));
 
 		/* First do an exact search (init will select auxil if requested) */
 		adjust_search(s, flags, NULL, exact);
@@ -539,8 +550,7 @@ rev_interp_rspl(
 	
 		/* If we selected exact aux, but failed to find a solution, relax expectation */
 		if (b->nsoln == 0 && b->naux > 0 && (flags & RSPL_EXACTAUX)) {
-//printf("~1 relaxing expactation when nsoln == %d, naux = %d, falgs & RSPL_EXACTAUX = 0x%x\n",
-//b->nsoln,b->naux,flags & RSPL_EXACTAUX);
+//printf("~1 relaxing expactation when nsoln == %d, naux = %d, falgs & RSPL_EXACTAUX = 0x%x\n", b->nsoln,b->naux,flags & RSPL_EXACTAUX);
 			DBG(("Searching for exact match to auxiliary target failed, so try again\n"));
 			adjust_search(s, flags & ~RSPL_EXACTAUX, NULL, exact);
 
@@ -629,6 +639,7 @@ rev_interp_rspl(
 	 && (b->cdist/s->get_out_scale(s)) < 0.002) {
 		co c_cpp       = b->cpp[0];	/* Save clip solution in case we want it */
 		double c_idist = b->idist;	
+		int c_iabove   = b->iabove;	
 		int c_nsoln    = b->nsoln;
 		int c_pauxcell = b->pauxcell;
 		double c_cdist = b->cdist;
@@ -679,6 +690,7 @@ rev_interp_rspl(
 			/* Restore the clipped solution */
 			b->cpp[0] = c_cpp;
 			b->idist = c_idist;	
+			b->iabove = c_iabove;	
 			b->nsoln = c_nsoln;
 			b->pauxcell = c_pauxcell;
 			b->cdist = c_cdist;
@@ -1106,9 +1118,10 @@ init_search(
 	b->iclip = 0;					/* Default solution isn't above ink limit */
 
 	if (flags & RSPL_EXACTAUX)		/* Expect to be able to match auxiliary target exactly */
-		b->idist = 0.00001;			/* Best input distance to beat - helps sort/triage */
+		b->idist = 0.0001;			/* Best input distance to beat - helps sort/triage */
 	else
 		b->idist = INF_DIST;		/* Best input distance to beat. */
+	b->iabove = 0;					/* Best isn't known to be above (yet) */
 
 	b->cdist = INF_DIST;			/* Best clip distance to beat. */
 
@@ -1134,7 +1147,7 @@ adjust_search(
 	b->op    = op;				/* operation */
 	b->flags = flags;			/* hint flags */
 
-	/* Switch to appropriate operation */
+	/* Switch from exact to aux if we need to */
 	if (b->op == exact && (b->naux > 0 || di != fdi)) {
 		b->op = auxil;
 	} else if (b->op == auxil && b->naux == 0 && di == fdi) {
@@ -1191,9 +1204,10 @@ adjust_search(
 	b->nsoln = 0;					/* No solutions at present */
 
 	if (flags & RSPL_EXACTAUX)		/* Expect to be able to match auxiliary target exactly */
-		b->idist = 0.00001;			/* Best input distance to beat - helps sort/triage */
+		b->idist = 0.0001;			/* Best input distance to beat - helps sort/triage */
 	else
 		b->idist = INF_DIST;		/* Best input distance to beat. */
+	b->iabove = 0;					/* Best isn't known to be above (yet) */
 
 	b->cdist = INF_DIST;			/* Best clip distance to beat. */
 
@@ -2029,7 +2043,7 @@ static int auxil_setsort(schbase *b, cell *c) {
 	rspl *s = b->s;
 	int f, fdi  = b->s->fdi;
 	int ee, ixc = b->ixc;
-	double ss, sort;
+	double ss, sort, nabove;
 
 	DBG(("Reverse auxiliary search, evaluate and set sort key on cell\n"));
 
@@ -2057,16 +2071,27 @@ static int auxil_setsort(schbase *b, cell *c) {
 	/* (We may have a non INF_DIST idist before commencing the */
 	/* search if we already know that the auxiliary target is */
 	/* within gamut - the usual usage case!) */
-	for (sort = 0.0, ee = 0; ee < b->naux; ee++) {
-		double tt;
+	for (sort = 0.0, nabove = ee = 0; ee < b->naux; ee++) {
 		int ei = b->auxi[ee];
-		if (c->p[0][ei]   >= (b->av[ei] + b->idist)
-		 || c->p[ixc][ei] <= (b->av[ei] - b->idist)) {
-			DBG(("Doesn't contain solution that will be closer to auxiliary goal\n"));
-			return 0;
-		}
-		tt = (c->p[0][ei] + c->p[ixc][ei]) - b->av[ei];
+		double tt = (c->p[0][ei] + c->p[ixc][ei]) - b->av[ei];
 		sort += tt * tt;
+		if (c->p[ixc][ei] >= b->av[ei])		/* Could be above */
+			nabove++;
+	}
+
+	if (b->flags & RSPL_MAXAUX && nabove < b->iabove) {
+		DBG(("Doesn't contain solution that has as many aux above auxiliary goal\n"));
+		return 0;
+	}
+	if (!(b->flags & RSPL_MAXAUX) || nabove == b->iabove) {
+		for (ee = 0; ee < b->naux; ee++) {
+			int ei = b->auxi[ee];
+			if (c->p[0][ei]   >= (b->av[ei] + b->idist)
+			 || c->p[ixc][ei] <= (b->av[ei] - b->idist)) {
+				DBG(("Doesn't contain solution that will be closer to auxiliary goal\n"));
+				return 0;
+			}
+		}
 	}
 	c->sort = sort + 0.01 * ss;
 
@@ -2079,18 +2104,31 @@ static int auxil_setsort(schbase *b, cell *c) {
 
 /* Re-check whether it's worth searching cell */
 static int auxil_check(schbase *b, cell *c) {
-	int ee, ixc = b->ixc;
+	int ee, ixc = b->ixc, nabove;
 
 	DBG(("Reverse auxiliary search, re-check cell\n"));
 
 	/* Check if this cell could possible improve b->idist */
 	/* and compute sort key as the distance to auxilliary target */
-	for (ee = 0; ee < b->naux; ee++) {
+
+	for (nabove = ee = 0; ee < b->naux; ee++) {
 		int ei = b->auxi[ee];
-		if (c->p[0][ei]   >= (b->av[ei] + b->idist)
-		 || c->p[ixc][ei] <= (b->av[ei] - b->idist)) {
-			DBG(("Doesn't contain solution that will be closer to auxiliary goal\n"));
-			return 0;
+		if (c->p[ixc][ei] >= b->av[ei])		/* Could be above */
+			nabove++;
+	}
+
+	if (b->flags & RSPL_MAXAUX && nabove < b->iabove) {
+		DBG(("Doesn't contain solution that has as many aux above auxiliary goal\n"));
+		return 0;
+	}
+	if (!(b->flags & RSPL_MAXAUX) || nabove == b->iabove) {
+		for (ee = 0; ee < b->naux; ee++) {
+			int ei = b->auxi[ee];
+			if (c->p[0][ei]   >= (b->av[ei] + b->idist)
+			 || c->p[ixc][ei] <= (b->av[ei] - b->idist)) {
+				DBG(("Doesn't contain solution that will be closer to auxiliary goal\n"));
+				return 0;
+			}
 		}
 	}
 	DBG(("Cell is still ok\n"));
@@ -2107,6 +2145,7 @@ static int auxil_compute(schbase *b, simplex *x) {
 	datai p;		/* absolute solution */
 	double idist;	/* Auxiliary input distance */
 	int wsrv;		/* Within simplex return value */
+	int nabove;		/* Number above aux target */
 
 	DBG(("\nAuxil: computing possible solution\n"));
 
@@ -2129,12 +2168,23 @@ static int auxil_compute(schbase *b, simplex *x) {
 	}
 
 	/* Check if this cell could possible improve b->idist */
-	for (e = 0; e < b->naux; e++) {
+	for (nabove = e = 0; e < b->naux; e++) {
 		int ei = b->auxi[e];					/* pmin/max[] is indexed in input space */
-		if (x->pmin[ei] >= (b->av[ei] + b->idist)
-		 || x->pmax[ei] <= (b->av[ei] - b->idist)) {
-			DBG(("Simplex doesn't contain solution that will be closer to auxiliary goal\n"));
-			return 0;
+		if (x->pmax[ei] >= b->av[ei])	/* Could be above */
+			nabove++;
+	}
+	if ((b->flags & RSPL_MAXAUX) && nabove < b->iabove) {
+		DBG(("Simplex doesn't contain solution that has as many aux above auxiliary goal\n"));
+		return 0;
+	}
+	if (!(b->flags & RSPL_MAXAUX) || nabove == b->iabove) {
+		for (nabove = e = 0; e < b->naux; e++) {
+			int ei = b->auxi[e];					/* pmin/max[] is indexed in input space */
+			if (x->pmin[ei] >= (b->av[ei] + b->idist)
+			 || x->pmax[ei] <= (b->av[ei] - b->idist)) {
+				DBG(("Simplex doesn't contain solution that will be closer to auxiliary goal\n"));
+				return 0;
+			}
 		}
 	}
 
@@ -2161,17 +2211,30 @@ static int auxil_compute(schbase *b, simplex *x) {
 //printf("~~ soln = %f %f %f %f\n",p[0],p[1],p[2],p[3]);
 //printf("~~ About to compute auxil distance\n");
 	/* Compute distance to auxiliary target */
-	for (idist = 0.0, e = 0; e < b->naux; e++) {
+	for (idist = 0.0, nabove = e = 0; e < b->naux; e++) {
 		int ei = b->auxi[e];
 		double tt = b->av[ei] - p[ei];
 		idist += tt * tt;
+		if (p[ei] >= b->av[ei])
+			nabove++;
 	}
 	idist = sqrt(idist);
+//printf("~1 idist %f, nabove %d\n",idist, nabove);
+//printf("~1 best idist %f, best iabove %d\n",b->idist, b->iabove);
 
 	/* We want the smallest error from auxiliary target */
-	if (b->nsoln != 0 && idist >= b->idist) {	/* Equal or worse auxiliary solution */
-		DBG(("idist = %f, better solution has been found before\n",idist));
-		return 0;
+	if (b->nsoln != 0) {
+		if (b->flags & RSPL_MAXAUX) {
+			if (nabove < b->iabove || (nabove == b->iabove && idist >= b->idist)) {
+				DBG(("idist = %f, better solution has been found before\n",idist));
+				return 0;
+			}
+		} else {
+			if (idist >= b->idist) {	/* Equal or worse auxiliary solution */
+				DBG(("idist = %f, better solution has been found before\n",idist));
+				return 0;
+			}
+		}
 	}
 
 	/* Solution is accepted */
@@ -2181,6 +2244,7 @@ static int auxil_compute(schbase *b, simplex *x) {
 	for (f = 0; f < fdi; f++)
 		b->cpp[0].v[f] = b->v[f];	/* Assumed to be an exact solution */
 	b->idist = idist;
+	b->iabove = nabove;
 	b->nsoln = 1;
 	b->pauxcell = x->ix;
 	if (wsrv == 2)					/* Is above (disabled) ink limit */

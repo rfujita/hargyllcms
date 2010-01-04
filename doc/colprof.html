@@ -125,15 +125,14 @@ total ink limit, 0
 black ink limit, 0 - 100% (default from .ti3)</span><br
  style="font-family: monospace;">
 <span style="font-family: monospace;">&nbsp;</span><a
- style="font-family: monospace;" href="#a">-a lxgs</a><span
- style="font-family: monospace;"> &nbsp;&nbsp; &nbsp; &nbsp; &nbsp;
-&nbsp;
+ style="font-family: monospace;" href="#a">-a lxXgsGS</a><span
+ style="font-family: monospace;"> &nbsp;&nbsp; &nbsp; &nbsp;&nbsp;
 Algorithm type override</span><br style="font-family: monospace;">
 <span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; l = Lab clut (def.), x = XYZ lut</span><br
- style="font-family: monospace;">
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; l = Lab cLUT (def.), x = XYZ cLUT, X
+= display XYZ cLUT + matrix</span><br style="font-family: monospace;">
 <span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; g = gamma+matrix, s = shaper+matrix</span><br
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; g = gamma+matrix, s = shaper+matrix,</span><br
  style="font-family: monospace;">
 <span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; G = single gamma+matrix,
@@ -418,7 +417,7 @@ copyright string will be generated for the profile.<br>
 <br>
 <a name="q"></a> The <b>-q</b> parameter sets the level of
 effort and/or detail in the resulting profile. For table based profiles
-("clut" profiles), it sets the main lookup table size, and hence
+("cLUT" profiles), it sets the main lookup table size, and hence
 quality in the resulting profile. It is highly recommended that <span
  style="font-weight: bold;">-qm</span> be used as a starting point, and
 other settings only tried after this has been evaluated. <span
@@ -456,7 +455,7 @@ to the actual values. A summary of the average and maximum Lab delta
 E's will be printed out if this flag is set. If the <b>-v</b> flag is
 also set, then information for each patch will also be printed.<br>
 <br>
-<a name="ni"></a><a name="np"></a><a name="no"></a>Normally CLUT base
+<a name="ni"></a><a name="np"></a><a name="no"></a>Normally cLUT base
 profiles are
 generated with three major elements:-
 per
@@ -465,7 +464,7 @@ and per PCS channel (shaper) output curves. The&nbsp; Using the <b>-ni</b>
 flag disables the creation of the per device channel curves, while
 using the <b>-no</b> flag disables the creation
 of the per PCS channel curves.<br>
-For CLUT based profiles, the input curves that are written to the
+For cLUT based profiles, the input curves that are written to the
 profile are composed of two components, a shape to best match the
 detailed shape of the device behavior, and a shape to distribute the
 input values evenly across the LUT input indexes. The <span
@@ -598,18 +597,32 @@ limits will be in the final calibrated device values if the <span
  style="font-weight: bold;">.ti3</span> includes the calibration table.<br>
 <br>
 <a name="a"></a> The <b>-a</b> parameter allows choosing an alternate
-profile type. By default (equivalent
-to <b>-al</b>) profile creates a <span style="font-weight: bold;">clut</span>
+profile type. <br>
+<br>
+By default (equivalent
+to <b>-al</b>) profile creates a <span style="font-weight: bold;">cLUT</span>
 based table profile with a PCS
 (Profile Connection Space) of L*a*b*, which generally gives the most
 accurate results, and allows for the four different rendering intents
 that ICC profiles
-can support. A lut base table profile using a PCS of XYZ can be created
+can support.<br>
+<br>
+A cLUT base table profile using a PCS of XYZ can be created
 if <b>-ax</b> is used, and this may have the advantage of better
 accuracy for additive type devices (displays, scanners, cameras etc.),
-and may give a more accurate white point for input devices by avoiding
+may avoid clipping for displays with a colorant chromaticity that can't
+be encoded in L*a*b* PCS space, and may give a more accurate white
+point for input devices by avoiding
 clipping of values above the white point that can occur in L*a*b* based
-lut input profiles. For RGB input or display profiles, a simpler
+cLUT input profiles. By default cLUT XYZ PCS Display profiles will also
+have a set of dummy matrix tags included in them, for better
+compatibility with other systems. The dummy matrix deliberately swaps
+Red and Green, so that it is obvious if the cLUT tables are not being
+used. If it is important for both the cLUT and matrix be accurate, use <span
+ style="font-weight: bold;">-aX</span>, which will create shaper/matrix
+tags.<br>
+<br>
+For RGB input or display profiles, a simpler
 type
 of profile using either a gamma curves or a general shaper curves,
 combined
@@ -632,7 +645,7 @@ device channels. The latter may be needed with certain applications
 that will not accept
 different shaper curves for each channel.<br>
 <br>
-<a name="u"></a> <span style="font-weight: bold;">-u:</span> CLUT
+<a name="u"></a> <span style="font-weight: bold;">-u:</span> cLUT
 style
 input profiles will normally be created
 such that the white point of the test chart, will be mapped to perfect
@@ -813,7 +826,7 @@ should be
 specified, not a non-device colorspace,
 device
 link, abstract or named color profile.<br>
-If no source gamut is specified for a CLUT Display profile, then an ICC
+If no source gamut is specified for a cLUT Display profile, then an ICC
 Version 2.2.0 profile will be created with only an A2B0 and B2A0 tag.
 If a source gamut is specified, then an ICC Version 2.4.0 profile will
 be created with a full complement of B2A tags to support all

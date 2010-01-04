@@ -13390,10 +13390,43 @@ extern ICCLIB_API void icmLuv2XYZ(icmXYZNumber *w, double *out, double *in) {
 	out[2] = Z;
 }
 
-/* NOTE :- none of the following four have been protected */
+/* NOTE :- none of the following seven have been protected */
 /* against arithmmetic issues (ie. for black) */
 
+/* CIE XYZ to perceptual CIE 1976 UCS diagram Yu'v'*/
+/* (Yu'v' is a better chromaticity space than Yxy) */
+extern ICCLIB_API void icmXYZ21976UCS(double *out, double *in) {
+	double X = in[0], Y = in[1], Z = in[2];
+	double den, u, v;
+
+	den = (X + 15.0 * Y + 3.0 * Z);
+	u = (4.0 * X) / den;
+	v = (9.0 * Y) / den;
+	
+	out[0] = Y;
+	out[1] = u;
+	out[2] = v;
+}
+
+/* Perceptual CIE 1976 UCS diagram Yu'v' to CIE XYZ */
+extern ICCLIB_API void icm1976UCS2XYZ(double *out, double *in) {
+	double u, v, fl, fu, fv, sum, X, Y, Z;
+
+	Y = in[0];
+	u = in[1];
+	v = in[2];
+
+	X = ((9.0 * u * Y)/(4.0 * v));
+	Z = -(((20.0 * v + 3.0 * u - 12.0) * Y)/(4.0 * v));
+
+	out[0] = X;
+	out[1] = Y;
+	out[2] = Z;
+}
+
 /* CIE XYZ to perceptual CIE 1960 UCS */
+/* (This was obsoleted by the 1976UCS, but is still used */
+/*  in computing color temperatures.) */
 extern ICCLIB_API void icmXYZ21960UCS(double *out, double *in) {
 	double X = in[0], Y = in[1], Z = in[2];
 	double u, v;
@@ -13423,6 +13456,7 @@ extern ICCLIB_API void icm1960UCS2XYZ(double *out, double *in) {
 }
 
 /* CIE XYZ to perceptual CIE 1964 WUV (U*V*W*) */
+/* (This is obsolete but still used in computing CRI) */
 extern ICCLIB_API void icmXYZ21964WUV(icmXYZNumber *w, double *out, double *in) {
 	double W, U, V;
 	double wucs[3];
@@ -13461,7 +13495,7 @@ extern ICCLIB_API void icm1964WUV2XYZ(icmXYZNumber *w, double *out, double *in) 
 	icm1960UCS2XYZ(out, iucs);
 }
 
-/* CIE CIE1960 UCS  to perceptual CIE 1964 WUV (U*V*W*) */
+/* CIE CIE1960 UCS to perceptual CIE 1964 WUV (U*V*W*) */
 extern ICCLIB_API void icm1960UCS21964WUV(icmXYZNumber *w, double *out, double *in) {
 	double W, U, V;
 	double wucs[3];
@@ -14472,7 +14506,7 @@ struct _icmLuBase *lup
 	return 0;
 }
 
-/* Return the media white and black points in XYZ space. */
+/* Return the media white and black points in absolute XYZ space. */
 /* Note that if not in the icc, the black point will be returned as 0, 0, 0, */
 /* and the function will return nz. */ 
 /* Any pointer may be NULL if value is not to be returned */
@@ -14487,6 +14521,35 @@ double *blk
 
 	if (blk != NULL) {
 		icmXYZ2Ary(blk,p->blackPoint);
+	}
+	if (p->blackisassumed)
+		return 1;
+	return 0;
+}
+
+/* Get the LU white and black points in LU PCS space, converted to XYZ. */
+/* (ie. white and black will be relative if LU is relative intent etc.) */
+/* Return nz if the black point is being assumed to be 0,0,0 rather */
+/* than being from the tag. */															\
+static int icmLuLu_wh_bk_points(
+struct _icmLuBase *p,
+double *wht,
+double *blk
+) {
+	if (wht != NULL) {
+		icmXYZ2Ary(wht,p->whitePoint);
+	}
+
+	if (blk != NULL) {
+		icmXYZ2Ary(blk,p->blackPoint);
+	}
+	if (p->intent != icAbsoluteColorimetric
+	 && p->intent != icmAbsolutePerceptual
+	 && p->intent != icmAbsoluteSaturation) {
+		if (wht != NULL)
+			icmMulBy3x3(wht, p->fromAbs, wht);
+		if (blk != NULL)
+			icmMulBy3x3(blk, p->fromAbs, blk);
 	}
 	if (p->blackisassumed)
 		return 1;
@@ -14884,6 +14947,7 @@ new_icmLuMono(
 	p->get_ranges = icmLu_get_ranges;
 	p->init_wh_bk = icmLuInit_Wh_bk;
 	p->wh_bk_points = icmLuWh_bk_points;
+	p->lu_wh_bk_points = icmLuLu_wh_bk_points;
 	p->fwd_lookup = icmLuMonoFwd_lookup;
 	p->fwd_curve  = icmLuMonoFwd_curve;
 	p->fwd_map    = icmLuMonoFwd_map;
@@ -15270,6 +15334,7 @@ new_icmLuMatrix(
 	p->get_ranges = icmLu_get_ranges;
 	p->init_wh_bk = icmLuInit_Wh_bk;
 	p->wh_bk_points = icmLuWh_bk_points;
+	p->lu_wh_bk_points = icmLuLu_wh_bk_points;
 	p->fwd_lookup = icmLuMatrixFwd_lookup;
 	p->fwd_curve  = icmLuMatrixFwd_curve;
 	p->fwd_matrix = icmLuMatrixFwd_matrix;
@@ -16063,6 +16128,7 @@ new_icmLuLut(
 	p->XYZ_Abs2Rel = icmLuXYZ_Abs2Rel;
 	p->init_wh_bk  = icmLuInit_Wh_bk;
 	p->wh_bk_points = icmLuWh_bk_points;
+	p->lu_wh_bk_points = icmLuLu_wh_bk_points;
 
 	p->lookup        = icmLuLut_lookup;
 	p->lookup_in     = icmLuLut_lookup_in;
@@ -16934,9 +17000,9 @@ static icmLuBase* icc_get_luobj (
 	if (luobj == NULL) {
 		sprintf(p->err,"icc_get_luobj: Unable to locate usable conversion");
 		p->errc = 1;
+	} else {
+		luobj->order = order;
 	}
-
-	luobj->order = order;
 
 	return luobj;
 }

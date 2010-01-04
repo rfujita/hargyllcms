@@ -69,7 +69,7 @@ static xspect il_none = {
 /* and 2856 according to the newer temerature scale. */
 static xspect il_A = {
 	107, 300.0, 830.0,	/* 107 bands from 300 to 830 nm in 5nm steps */
-	100.0,				/* Scale factor */
+	100.0,				/* Arbitrary scale factor */
 	{
 		0.930483, 1.128210, 1.357690, 1.622190, 1.925080,
 		2.269800, 2.659810, 3.098610, 3.589680, 4.136480,
@@ -101,7 +101,7 @@ static xspect il_A = {
 /* This is a CIE Illuminant A combined with a filter to simulate daylight. */
 static xspect il_C = {
 	93, 320.0, 780.0,	/* 107 bands from 300 to 830 nm in 5nm steps */
-	100.0,				/* Scale factor */
+	100.0,				/* Arbitrary factor */
 	{
 		0.01,   0.20,   0.40,   1.55,   2.70,   4.85,   7.00,   9.95,   12.90,  17.20, 
 		21.40,  27.50,  33.00,  39.92,  47.40,  55.17,  63.30,  71.81,  80.60,  89.53,
@@ -119,7 +119,7 @@ static xspect il_C = {
 /* D50 illuminant spectra */
 static xspect il_D50 = {
 	107, 300.0, 830.0,	/* 107 bands from 300 to 830 nm in 5nm steps */
-	100.0,				/* Scale factor */
+	100.0,				/* Arbitrary factor */
 	{
 		0.02, 1.03, 2.05, 4.91, 7.78, 11.26, 14.75, 16.35, 17.95, 19.48,
 		21.01, 22.48, 23.94, 25.45, 26.96, 25.72, 24.49, 27.18, 29.87, 39.59,
@@ -140,7 +140,7 @@ static xspect il_D50 = {
 /* Part 2: CIE Standard Illuminant D65 relative spectral power distribution */
 static xspect il_D65 = {
 	107, 300.0, 830.0,	/* 107 bands from 300 to 830 nm in 5nm steps */
-	100.0,				/* Scale factor */
+	100.0,				/* Arbitrary factor */
 	{
 		0.03410, 1.66430, 3.29450, 11.76520, 20.23600,
 		28.64470, 37.05350, 38.50110, 39.94880, 42.43020,
@@ -236,7 +236,7 @@ static int daylight_il(xspect *sp, double ct) {
 	sp->spec_n = 107;
 	sp->spec_wl_short = 300.0;
 	sp->spec_wl_long = 830;
-	sp->norm = 100.0;
+	sp->norm = 100.0;		/* Arbitrary */
 
 	return 0;
 }
@@ -267,7 +267,7 @@ static int planckian_il(xspect *sp, double ct) {
 		sp->spec[i] /= norm;
 
 	}
-	sp->norm = 100.0;
+	sp->norm = 100.0;		/* Arbitrary */
 
 	return 0;
 }
@@ -276,7 +276,7 @@ static int planckian_il(xspect *sp, double ct) {
 /* Fluorescent, Standard, 6350K, CRI 72 */
 static xspect il_F5 = {
 	107, 300.0, 830.0,	/* 109 bands from 300 to 830 nm in 5nm steps */
-	20.0,
+	20.0,		/* Arbitrary scale factor */
 	{
 /* 300 */	0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 /* 340 */	0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
@@ -299,7 +299,7 @@ static xspect il_F5 = {
 /* Fluorescent, Wide band 5000K, CRI 95 */
 static xspect il_F8 = {
 	107, 300.0, 830.0,	/* 109 bands from 300 to 830 nm in 5nm steps */
-	20.0,
+	20.0,		/* Arbitrary scale factor */
 	{
 /* 300 */	0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 /* 340 */	0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
@@ -323,7 +323,7 @@ static xspect il_F8 = {
 /* Fluorescent, Narrow band 5000K, CRI 81 */
 static xspect il_F10 = {
 	107, 300.0, 830.0,	/* 109 bands from 300 to 830 nm in 5nm steps */
-	20.0,
+	20.0,		/* Arbitrary scale factor */
 	{
 		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
 		0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 
@@ -344,7 +344,7 @@ static xspect il_F10 = {
 /* Spectrocam Xenon Lamp */
 static xspect il_Spectrocam = {
    95, 325.0, 795.0,   /* 95 bands from 325 to 795 nm in 5nm steps */
-   1.0,
+   1.0,		/* Arbitrary scale factor */
    {
 	   0.220794, 0.240550, 0.281212, 0.363042, 0.493282,
 	   0.582279, 0.657489, 0.715563, 0.797559, 0.916343,
@@ -3076,6 +3076,9 @@ icColorSpaceSignature  rcs		/* Return color space, icSigXYZData or icSigLabData 
 			break;
 	    case icxIT_A:
 			p->illuminant = il_A;
+			break;
+	    case icxIT_C:
+			p->illuminant = il_C;
 			break;
 	    case icxIT_default:
 	    case icxIT_D50:

@@ -320,7 +320,7 @@ int luord
 		tt = v[f];
 		tt *= tt;
 
-		/* Weigh to supress ripples */
+		/* Weigh to suppress ripples */
 		if (f <= 1)
 			w = SHAPE_BASE;
 		else {

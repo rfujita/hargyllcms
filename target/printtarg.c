@@ -1649,7 +1649,7 @@ double pw,			/* Page width */
 double ph,			/* Page height */
 double bord, 		/* Border in mm */
 int nollimit,		/* NZ to not limit the strip length */
-int nolpcbord,		/* NZ to supress left paper clip border */
+int nolpcbord,		/* NZ to suppress left paper clip border */
 int rand,			/* Randomise flag */
 int rstart,			/* Starting index for random */
 alphix *saix,		/* Strip alpha index object */
@@ -2205,10 +2205,14 @@ int *p_npat			/* Return number of patches including padding */
 	if (padlrow) {		/* Add in extra padding patches */
 		int i;
 		for (i = 0; lpprow < pprow; lpprow++, npat++, tidnpat++, i = (i + 1) & 7) {
+#ifdef NEVER
 			if (needpc && rand)
 				cols[npat] = pcol[i];		/* structure copy */
 			else
 				cols[npat] = *media;		/* structure copy */
+#else
+			cols[npat] = *media;		/* structure copy */
+#endif
 			cols[npat].i = npat;			/* Now has an index */
 			cols[npat].t &= ~T_PRESET;
 			cols[npat].t |= T_PAD; 
@@ -2780,7 +2784,7 @@ void usage(char *diag, ...) {
 	fprintf(stderr," -y pattern      Use given patch indexing pattern (Default = \"%s\")\n",DEF_PIXPAT);
 	fprintf(stderr," -m margin       Set a page margin in mm (default %3.1f mm)\n",DEF_MARGINE);       
 	fprintf(stderr," -P              Don't limit strip length\n");       
-	fprintf(stderr," -L              Supress any left paper clip border\n");       
+	fprintf(stderr," -L              Suppress any left paper clip border\n");       
 	fprintf(stderr," -p size         Select page size from:\n");
 	for (pp = psizes; pp->name != NULL; pp++)
 		fprintf(stderr,"                 %s	[%.1f x %.1f mm]%s\n", pp->name, pp->w, pp->h,
@@ -2833,7 +2837,7 @@ char *argv[];
 	int si, fi, wi;			/* sample id index, field index, keyWord index */
 	char label[400];		/* Space for chart label */
 	double marg = DEF_MARGINE;	/* Margin from paper edge in mm */
-	int nolpcbord = 0;		/* NZ to supress left paper clip border */
+	int nolpcbord = 0;		/* NZ to suppress left paper clip border */
 	int nollimit = 0;		/* NZ to release any strip length limits */
 	paper *pap = NULL;		/* Paper size pointer, NULL if custom */
 	double cwidth, cheight;	/* Custom paper width and height in mm */
@@ -3075,7 +3079,7 @@ char *argv[];
 				nollimit = 1;
 			}
 
-			/* Supress left paper clip border */
+			/* Suppress left paper clip border */
 			else if (argv[fa][1] == 'L') {
 				nolpcbord = 1;
 			}

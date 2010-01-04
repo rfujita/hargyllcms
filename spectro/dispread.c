@@ -170,6 +170,7 @@ int main(int argc, char *argv[])
 	instType itype = instUnknown;		/* Default target instrument - none */
 	int docalib = 0;					/* Do a calibration */
 	int highres = 0;					/* Use high res mode if available */
+	int adaptive = 0;					/* Use adaptive mode if available */
 	int dtype = 0;						/* Display kind, 0 = default, 1 = CRT, 2 = LCD */
 	int proj = 0;						/* NZ if projector */
 	int nocal = 0;						/* Disable auto calibration */
@@ -239,7 +240,7 @@ int main(int argc, char *argv[])
 			if (argv[fa][1] == '?' || argv[fa][1] == '-') {
 				usage("Usage requested");
 
-			} else if (argv[fa][1] == 'v' || argv[fa][1] == 'V') {
+			} else if (argv[fa][1] == 'v') {
 				verb = 1;
 
 			/* Display number */
@@ -343,6 +344,10 @@ int main(int argc, char *argv[])
 			} else if (argv[fa][1] == 'H') {
 				highres = 1;
 
+			/* Adaptive mode */
+			} else if (argv[fa][1] == 'V') {
+				adaptive = 1;
+
 			/* Change color callout */
 			} else if (argv[fa][1] == 'C') {
 				fa = nfa;
@@ -407,8 +412,8 @@ int main(int argc, char *argv[])
 	}
 
 	if (docalib) {
-		if ((rv = disprd_calibration(itype, comport, fc, dtype, proj, nocal, disp, blackbg,
-		                               override, patsize, ho, vo, verb, debug)) != 0) {
+		if ((rv = disprd_calibration(itype, comport, fc, dtype, proj, adaptive, nocal, disp,
+		                             blackbg, override, patsize, ho, vo, verb, debug)) != 0) {
 			error("docalibration failed with return value %d\n",rv);
 		}
 	}
@@ -583,9 +588,9 @@ int main(int argc, char *argv[])
 		cal[0][0] = -1.0;	/* Not used */
 	}
 
-	if ((dr = new_disprd(&errc, itype, fake ? -99 : comport, fc, dtype, proj, nocal, highres, 0,
-	          cal, ncal, disp, blackbg, override, ccallout, mcallout, patsize, ho, vo, spectral,
-	          verb, VERBOUT, debug,
+	if ((dr = new_disprd(&errc, itype, fake ? -99 : comport, fc, dtype, proj, adaptive, nocal,
+	                     highres, 0, cal, ncal, disp, blackbg, override, ccallout, mcallout,
+	                     patsize, ho, vo, spectral, verb, VERBOUT, debug,
 	                     "fake" ICC_FILE_EXT)) == NULL)
 		error("new_disprd failed with '%s'\n",disprd_err(errc));
 

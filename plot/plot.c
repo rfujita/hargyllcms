@@ -1987,7 +1987,7 @@ plot_info *pdp
 	XSetForeground(mydisplay,mygc, col.pixel);
 
 	/* Set dashed lines for axes */
-	XSetLineAttributes(mydisplay, mygc, 0, LineOnOffDash, CapButt, JoinBevel);
+	XSetLineAttributes(mydisplay, mygc, 1, LineOnOffDash, CapButt, JoinBevel);
 	XSetDashes(mydisplay, mygc, 0, dash_list, 2);
 	// ~~ doesn't seem to work. Why ?
 

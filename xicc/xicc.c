@@ -325,6 +325,9 @@ static double bpfindfunc(void *adata, double pv[]) {
 /* Try and compute a real black point in XYZ given an iccLu, */
 /* and also return the K only black or the normal black if the device doesn't have K */
 /* black[] will be unchanged if black cannot be computed. */
+/* Note that the black point will be in the space of the Lu */
+/* converted to XYZ, so will have the Lu's intent etc. */
+/* (Note that this is duplicated in xlut.c set_icxLuLut() !!!) */
 static void icxLu_comp_bk_point(
 icxLuBase *x,
 int gblk,				/* If nz, compute black if possible. */
@@ -465,7 +468,7 @@ double *kblack			/* Output. Looked up if possible or set to black[] otherwise */
 				double cvals[MAX_CHAN][3];
 				int nlighter, ndarker;
 
-				/* Decide if the colorspace is aditive or subtractive */
+				/* Decide if the colorspace is additive or subtractive */
 //printf("~1 N channel:\n");
 
 				/* First the no colorant value */
@@ -727,6 +730,7 @@ double *kblack			/* Output. Looked up if possible or set to black[] otherwise */
 
 /* Return the media white and black points */
 /* in the xlu effective PCS colorspace. Pointers may be NULL. */
+/* (ie. these will be relative values for relative intent etc.) */
 static void icxLuEfv_wh_bk_points(
 icxLuBase *p,
 double *wht,
@@ -735,8 +739,8 @@ double *kblk		/* K only black */
 ) {
 	double white[3], black[3], kblack[3];
 
-	/* Get the icc black and white points in XYZ */
-	if (p->plu->wh_bk_points(p->plu, white, black)) {
+	/* Get the Lu PCS converted to XYZ icc black and white points in XYZ */
+	if (p->plu->lu_wh_bk_points(p->plu, white, black)) {
 		/* Black point is assumed. We should determine one instead. */
 		/* Lookup K only black too */
 		icxLu_comp_bk_point(p, 1, white, black, kblack);
@@ -1751,6 +1755,7 @@ void xicc_dump_inking(icxInk *ik) {
 		else
 			printf("Inking rule is a 5 parameter K function of L\n");
 		printf("Ksmth = %f\n",ik->c.Ksmth);
+		printf("Kskew = %f\n",ik->c.Kskew);
 		printf("Kstle = %f\n",ik->c.Kstle);
 		printf("Kstpo = %f\n",ik->c.Kstpo);
 		printf("Kenpo = %f\n",ik->c.Kenpo);
@@ -1762,12 +1767,14 @@ void xicc_dump_inking(icxInk *ik) {
 		else
 			printf("Inking rule is a 2x5 parameter K function of L and K aux\n");
 		printf("Min Ksmth = %f\n",ik->c.Ksmth);
+		printf("Min Kskew = %f\n",ik->c.Kskew);
 		printf("Min Kstle = %f\n",ik->c.Kstle);
 		printf("Min Kstpo = %f\n",ik->c.Kstpo);
 		printf("Min Kenpo = %f\n",ik->c.Kenpo);
 		printf("Min Kenle = %f\n",ik->c.Kenle);
 		printf("Min Kshap = %f\n",ik->c.Kshap);
 		printf("Max Ksmth = %f\n",ik->x.Ksmth);
+		printf("Max Kskew = %f\n",ik->x.Kskew);
 		printf("Max Kstle = %f\n",ik->x.Kstle);
 		printf("Max Kstpo = %f\n",ik->x.Kstpo);
 		printf("Max Kenpo = %f\n",ik->x.Kenpo);
@@ -2427,208 +2434,6 @@ double icxMaxUnderlyingLimit(xcal *cal, double ilimit) {
 	ulimitfunc((void *)&cx, dv);
 
 	return cx.uilimit;
-}
-
-/* ------------------------------------------------------ */
-
-/* 2 degree spectrum locus in xy coordinates */
-/* nm, x, y, Y CMC */
-double icxSpectrumLocus2[65][4] = {
-	{ 380, 0.1741, 0.0050, 0.000039097450 },
-	{ 385, 0.1740, 0.0050, 0.000065464490 },
-	{ 390, 0.1738, 0.0049, 0.000121224052 },
-	{ 395, 0.1736, 0.0049, 0.000221434140 },
-	{ 400, 0.1733, 0.0048, 0.000395705080 },
-	{ 405, 0.1730, 0.0048, 0.000656030940 },
-	{ 410, 0.1726, 0.0048, 0.001222776600 },
-	{ 415, 0.1721, 0.0048, 0.002210898200 },
-	{ 420, 0.1714, 0.0051, 0.004069952000 },
-	{ 425, 0.1703, 0.0058, 0.007334133400 },
-	{ 430, 0.1689, 0.0069, 0.011637600000 },
-	{ 435, 0.1669, 0.0086, 0.016881322000 },
-	{ 440, 0.1644, 0.0109, 0.023015402000 },
-	{ 445, 0.1611, 0.0138, 0.029860866000 },
-	{ 450, 0.1566, 0.0177, 0.038072300000 },
-	{ 455, 0.1510, 0.0227, 0.048085078000 },
-	{ 460, 0.1440, 0.0297, 0.060063754000 },
-	{ 465, 0.1355, 0.0399, 0.074027114000 },
-	{ 470, 0.1241, 0.0578, 0.091168598000 },
-	{ 475, 0.1096, 0.0868, 0.112811680000 },
-	{ 480, 0.0913, 0.1327, 0.139122260000 },
-	{ 485, 0.0686, 0.2007, 0.169656160000 },
-	{ 490, 0.0454, 0.2950, 0.208513180000 },
-	{ 495, 0.0235, 0.4127, 0.259083420000 },
-	{ 500, 0.0082, 0.5384, 0.323943280000 },
-	{ 505, 0.0039, 0.6548, 0.407645120000 },
-	{ 510, 0.0139, 0.7502, 0.503483040000 },
-	{ 515, 0.0389, 0.8120, 0.608101540000 },
-	{ 520, 0.0743, 0.8338, 0.709073280000 },
-	{ 525, 0.1142, 0.8262, 0.792722560000 },
-	{ 530, 0.1547, 0.8059, 0.861314320000 },
-	{ 535, 0.1929, 0.7816, 0.914322820000 },
-	{ 540, 0.2296, 0.7543, 0.953482260000 },
-	{ 545, 0.2658, 0.7243, 0.979818740000 },
-	{ 550, 0.3016, 0.6923, 0.994576720000 },
-	{ 555, 0.3373, 0.6589, 0.999604300000 },
-	{ 560, 0.3731, 0.6245, 0.994513460000 },
-	{ 565, 0.4087, 0.5896, 0.978204680000 },
-	{ 570, 0.4441, 0.5547, 0.951588260000 },
-	{ 575, 0.4788, 0.5202, 0.915060800000 },
-	{ 580, 0.5125, 0.4866, 0.869647940000 },
-	{ 585, 0.5448, 0.4544, 0.816076000000 },
-	{ 590, 0.5752, 0.4242, 0.756904640000 },
-	{ 595, 0.6029, 0.3965, 0.694818180000 },
-	{ 600, 0.6270, 0.3725, 0.630997820000 },
-	{ 605, 0.6482, 0.3514, 0.566802360000 },
-	{ 610, 0.6658, 0.3340, 0.503096860000 },
-	{ 615, 0.6801, 0.3197, 0.441279360000 },
-	{ 620, 0.6915, 0.3083, 0.380961920000 },
-	{ 625, 0.7006, 0.2993, 0.321156580000 },
-	{ 630, 0.7079, 0.2920, 0.265374180000 },
-	{ 635, 0.7140, 0.2859, 0.217219520000 },
-	{ 640, 0.7190, 0.2809, 0.175199900000 },
-	{ 645, 0.7230, 0.2770, 0.138425720000 },
-	{ 650, 0.7260, 0.2740, 0.107242628000 },
-	{ 655, 0.7283, 0.2717, 0.081786794000 },
-	{ 660, 0.7300, 0.2700, 0.061166218000 },
-	{ 665, 0.7311, 0.2689, 0.044729418000 },
-	{ 670, 0.7320, 0.2680, 0.032160714000 },
-	{ 675, 0.7327, 0.2673, 0.023307860000 },
-	{ 680, 0.7334, 0.2666, 0.017028548000 },
-	{ 685, 0.7340, 0.2660, 0.011981432000 },
-	{ 690, 0.7344, 0.2656, 0.008259734600 },
-	{ 695, 0.7346, 0.2654, 0.005758363200 },
-	{ 700, 0.7347, 0.2653, 0.004117206200 }
-};
-
-/* Clip an XYZ value to be within the 2 degree spectrum locus. */
-/* Return nz if clipping occured */
-int icxClipToSpectrumLocus2(double *out, double *in) {
-	double Yxy[3];
-	static int qinit = 0;		/* quick has been initialized */
-	static double quick[5][2];
-	int clip = 0;
-	int i, j;
-
-	/* To speed up test, compute a five sided poligon within locus */
-	if (qinit == 0) {
-		for (j = i = 0; i < 65; i += 16, j++) {
-			quick[j][0] = icxSpectrumLocus2[i][1];
-			quick[j][1] = icxSpectrumLocus2[i][2];
-		}
-		qinit = 1;
-	}
-
-	out[0] = in[0];
-	out[1] = in[1];
-	out[2] = in[2];
-
-	/* Convert point to xyY */
-	icmXYZ2Yxy(Yxy, in);
-
-	/* Check if xy is within quick locus */
-	for (i = 0; i < 5; i++) {
-		double side;
-
-		j = i < 4 ? i+1 : 0;
-
-		side = (quick[j][0] - quick[i][0]) * (Yxy[2] - quick[i][1])
-		     - (quick[j][1] - quick[i][1]) * (Yxy[1] - quick[i][0]);
-
-		if (side > 0.0) {		/* It's outside simple, test full */
-			double ii, jj;
-
-//printf("~1 wrong side of quick %d\n",i);
-			if (i < 4) {
-				int ii, jj;
-				for (ii = 16 * i; ii < (16 * (i + 1)); ii++) {
-					double v1[2], v2[2];
-
-					jj = ii+1;
-
-//printf("~1 testing slow %d to %d\n",ii,jj);
-
-					v1[0] = icxSpectrumLocus2[jj][1] - icxSpectrumLocus2[ii][1];
-					v1[1] = icxSpectrumLocus2[jj][2] - icxSpectrumLocus2[ii][2];
-					v2[0] = Yxy[1] - icxSpectrumLocus2[ii][1];
-					v2[1] = Yxy[2] - icxSpectrumLocus2[ii][2];
-
-					side = v1[0] * v2[1] - v1[1] * v2[0];
-
-					if (side > 0.0) {
-						double t;
-
-						t = (v1[0] * v2[0] + v1[1] * v2[1])
-						  / (v1[0] * v1[0] + v1[1] * v1[1]);
-//printf("~1 wrong side of slow %d, t = %f\n",ii, t);
-
-						if (t > -1e-9 && t < (1 + 1e-9)) {
-							Yxy[1] = icxSpectrumLocus2[ii][1] + t * v1[0];
-							Yxy[2] = icxSpectrumLocus2[ii][2] + t * v1[1];
-//printf("~1 found perpendicular %f %f\n",Yxy[1],Yxy[2]);
-							clip = 1;
-							break;		/* Found perpendicular */
-						}
-					}
-				}
-				if (ii < (16 * (i + 1))) {
-//printf("~1 found perp. so done\n");
-					break;
-				}
-			} else {		/* It's outside the purple line */
-				double v1[2], v2[2], t;
-				v1[0] = quick[j][0] - quick[i][0];
-				v1[1] = quick[j][1] - quick[i][1];
-				v2[0] = Yxy[1] - quick[i][0];
-				v2[1] = Yxy[2] - quick[i][1];
-
-//printf("~1 wrong side of purpe %d\n",i);
-				t = (v1[0] * v2[0] + v1[1] * v2[1])
-				  / (v1[0] * v1[0] + v1[1] * v1[1]);
-
-				if (t < 0.0)
-					t = 0.0;
-				else if (t > 1.0)
-					t = 1.0;
-				Yxy[1] = quick[i][0] + t * v1[0];
-				Yxy[2] = quick[i][1] + t * v1[1];
-				clip = 1;
-//printf("~1 found perpendicular %f %f\n",Yxy[1],Yxy[2]);
-				break;
-			}
-		}
-//printf("~1 xy %f %f is side %f of %f %f -> %f %f\n", Yxy[1],Yxy[2],side, quick[i][0],quick[i][1],quick[j][0],quick[j][1]);
-	}
-
-	/* Convert back to XYZ */
-	icmYxy2XYZ(out, Yxy);
-
-	/* Some crude clipping at the end */
-	if (in[1] < 0.0) {
-		out[0] = 0.0;
-		out[1] = 0.0;
-		out[2] = 0.0;
-		return 1;
-	}
-
-	if (in[1] > 1.0) {
-		out[0] /= in[1];
-		out[2] /= in[1];
-		out[1] = 1.0;
-		clip = 1;
-	}
-
-	if (in[0] < 0.0) {
-		in[0] = 0.0;
-		clip = 1;
-	}
-
-	if (in[2] < 0.0) {
-		in[2] = 0.0;
-		clip = 1;
-	}
-
-	return clip;
 }
 
 /* ------------------------------------------------------ */

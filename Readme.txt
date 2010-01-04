@@ -1,14 +1,14 @@
 
-Argyll CMS README file - Version 1.1.0 RC2
+Argyll CMS README file - Version 1.1.0 RC3
 ------------------------------------------
 
-Date:   4th December 2009
+Date:   4th January 2010
 Author: Graeme Gill
 
 Introduction
 
-Argyll is an open source, ICC compatible color management system. It
-supports accurate ICC profile creation for scanners, cameras and film
+ArgyllCMS is an ICC compatible color management system, available as Open Source.
+It supports accurate ICC profile creation for scanners, cameras and film
 recorders, and calibration and profiling of displays and RGB & CMYK printers.
 Spectral sample data is supported, allowing a selection of illuminants observer
 types, and paper fluorescent whitener additive compensation. Profiles can also
@@ -23,7 +23,7 @@ is provided for each utility, and a general guide to using the tools for typical
 color management tasks is also available. A mailing list provides support for
 more advanced usage.
 
-This is Version 1.1.0 RC2, a feature and bug fix release following the V1.0.4
+This is Version 1.1.0 RC3, a feature and bug fix release following the V1.0.4
 release on 30th June 2009. The first public release of icclib was in November 1998,
 and of Argyll was in July 2000. Code development commenced in 1995. See Changes
 Summary for an overview of changes since the last release. Changes between

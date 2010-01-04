@@ -503,9 +503,12 @@ struct _rspl {
 	/* Possible reverse hint flags */
 #define RSPL_WILLCLIP 0x0001		/* Hint that clipping will be needed */
 #define RSPL_EXACTAUX 0x0002		/* Hint that auxiliary target will be matched exactly */
-#define RSPL_AUXLOCUS 0x0004		/* Auxiliary target is proportion of locus, not */
+#define RSPL_MAXAUX   0x0004		/* If not possible to match exactly, return the */
+									/* closest value larger than the target, rather than */
+									/* absolute closest. */
+#define RSPL_AUXLOCUS 0x0008		/* Auxiliary target is proportion of locus, not */
 									/* absolute. Implies EXACTAUX hint. */
-#define RSPL_NEARCLIP 0x0008		/* If clipping occurs, return the nearest solution, */
+#define RSPL_NEARCLIP 0x0010		/* If clipping occurs, return the nearest solution, */
 									/* rather than the one in the clip direction. */
 
 	/* Return value masks */

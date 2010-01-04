@@ -415,8 +415,12 @@ int main(int argc, char *argv[])
 					spec->del(spec);
 					spec = NULL;
 					specname[0] = '\000';
-					break;
+					error("Failed to find spectral band %d nm in file '%s'\n",specmin + 10 * j,specname);
+				} else {
+					if (spec->t[0].ftype[spi[j]] != r_t)
+						error("Field '%s' from file '%s' is wrong type",spec->t[0].fsym[spi[j]], specname);
 				}
+
 			}
 		}
 	}

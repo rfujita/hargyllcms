@@ -306,6 +306,7 @@ struct _schbase {
 	int naux;			/* Number of auxiliary target input values */
 	int auxi[MXRI];		/* aux list of auxiliary target input values */
 	double idist;		/* best input distance auxiliary target found (smaller is better) */
+	int iabove;			/* Number of auxiliaries at or above zero */
 
 	int canvecclip;		/* Non-zero if vector clip direction usable */
 	double cdir[MXRO];	/* Clip vector direction and length wrt. v[] */

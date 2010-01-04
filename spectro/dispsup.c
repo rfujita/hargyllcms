@@ -310,6 +310,7 @@ int comport, 			/* COM port used */
 flow_control fc,		/* Serial flow control */
 int dtype,				/* Display type, 0 = unknown, 1 = CRT, 2 = LCD */
 int proj,				/* NZ for projector mode */
+int adaptive,			/* NZ for adaptive mode */
 int nocal,				/* NZ to disable auto instrument calibration */
 disppath *disp,			/* display to calibrate. */
 int blackbg,			/* NZ if whole screen should be filled with black */
@@ -327,6 +328,7 @@ int debug				/* Debug flag */
 	inst_cal_type calt = inst_calt_all;
 	inst_capability  cap;
 	inst2_capability cap2;
+	inst_mode mode = 0;
 
 	dwi.disp = disp; 
 	dwi.blackbg = blackbg;
@@ -365,7 +367,18 @@ int debug				/* Debug flag */
 	cap2 = p->capabilities2(p);
 
 	/* Set to emission mode to read a display */
-	if ((rv = p->set_mode(p, inst_mode_emis_disp)) != inst_ok) {
+	if (proj)
+		mode = inst_mode_emis_proj;
+	else {
+		if (adaptive)
+			mode = inst_mode_emis_spot;
+		else
+			mode = inst_mode_emis_disp;
+	}
+	
+	/* (We're assuming spectral doesn't affect calibration ?) */
+
+	if ((rv = p->set_mode(p, mode)) != inst_ok) {
 		DBG((dbgo,"Set_mode failed with '%s' (%s)\n",
 		       p->inst_interp_error(p, rv), p->interp_error(p, rv)))
 		return -1;
@@ -453,6 +466,7 @@ int debug				/* Debug flag */
 
 	/* clean up */
 	p->del(p);
+	if (verb) printf("Closing the instrument\n");
 
 	return 0;
 }
@@ -1265,8 +1279,10 @@ static int config_inst_displ(disprd *p) {
 	cap2 = p->it->capabilities2(p->it);
 	
 	if (( p->proj && (cap & inst_emis_proj) == 0)
-	 || (!p->proj && (cap & inst_emis_disp) == 0)) {
-		printf("Need emissive measurement capability,\n");
+	 || (!p->proj && p->adaptive && (cap & inst_emis_spot) == 0)
+	 || (!p->proj && !p->adaptive && (cap & inst_emis_disp) == 0)) {
+		printf("Need %s measurement capability,\n",
+		       p->proj ? "projection" : p->adaptive ? "emission" : "display");
 		printf("but instrument doesn't support it\n");
 		return 2;
 	}
@@ -1277,10 +1293,14 @@ static int config_inst_displ(disprd *p) {
 		p->spectral = 0;
 	}
 	
-	if (p->proj)
+	if (p->proj) {
 		mode = inst_mode_emis_proj;
-	else
-		mode = inst_mode_emis_disp;
+	} else {
+		if (p->adaptive)
+			mode = inst_mode_emis_spot;
+		else
+			mode = inst_mode_emis_disp;
+	}
 	
 	if (p->spectral) {
 		mode |= inst_mode_spectral;
@@ -1383,6 +1403,7 @@ int comport, 		/* COM port used. -99 == fake Display */
 flow_control fc,	/* Flow control */
 int dtype,			/* Display type, 0 = unknown, 1 = CRT, 2 = LCD */
 int proj,			/* NZ for projector mode */
+int adaptive,		/* NZ for adaptive mode */
 int nocal,			/* No automatic instrument calibration */
 int highres,		/* Use high res mode if available */
 int donat,			/* Use ramdac for native output, else run through current or set ramdac */
@@ -1424,6 +1445,7 @@ char *fake_name		/* Name of profile to use as a fake device */
 	p->spectral = spectral;
 	p->dtype = dtype;
 	p->proj = proj;
+	p->adaptive = adaptive;
 	p->nocal = nocal;
 	p->highres = highres;
 	if (df)

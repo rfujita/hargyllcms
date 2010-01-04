@@ -815,6 +815,8 @@ int main(int argc, char *argv[])
 		it->icom->set_uih(it->icom, 'R', 'R', ICOM_CMND);
 		it->icom->set_uih(it->icom, 'h', 'h', ICOM_CMND);
 		it->icom->set_uih(it->icom, 'H', 'H', ICOM_CMND);
+		it->icom->set_uih(it->icom, 'k', 'k', ICOM_CMND);
+		it->icom->set_uih(it->icom, 'K', 'K', ICOM_CMND);
 		it->icom->set_uih(it->icom, 's', 's', ICOM_CMND);
 		it->icom->set_uih(it->icom, 'S', 'S', ICOM_CMND);
 		it->icom->set_uih(it->icom, 'q', 'q', ICOM_USER);
@@ -857,7 +859,8 @@ int main(int argc, char *argv[])
 		double cct, vct, vdt;
 		double cct_de, vct_de, vdt_de;
 		int ch = '0';		/* Character */
-		int dofwa = 0;		/* Setup for FWA compensation */
+		int sufwa = 0;		/* Setup for FWA compensation */
+		int dofwa = 0;		/* Do FWA compensation */
 		int fidx = -1;		/* FWA compensated index, default = none */
 	
 		if (savdrd != -1 && (cap & inst_s_ref_spot)) {
@@ -901,7 +904,7 @@ int main(int argc, char *argv[])
 			printf("\nThere are saved spot readings in the instrument.\n");
 			printf("Hit [A-Z] to use reading for white and setup FWA compensation (keyed to letter)\n");
 			printf("[a-z] to use reading for FWA compensated value from keyed reference\n");
-			printf("'r' to set reference, 's' to save spectrum, 'h' to toggle high res.\n");
+			printf("'r' to set reference, 's' to save spectrum,\n");
 			printf("Hit ESC or Q to exit, N to not read saved reading,\n");
 			printf("any other key to use reading: ");
 			fflush(stdout);
@@ -985,7 +988,8 @@ int main(int argc, char *argv[])
 
 			if (ambient == 2) {
 				printf("\nConfigure for ambient, press and hold button, trigger flash then release button,\n");
-				printf("or hit 'r' to set reference, 's' to save spectrum, 'h' to toggle high res.\n");
+				printf("or hit 'r' to set reference, 's' to save spectrum,\n");
+				printf("'h' to toggle high res., 'k' to do a calibration\n");
 
 			} else {
 				/* If this is an xy instrument: */
@@ -1016,7 +1020,8 @@ int main(int argc, char *argv[])
 				}
 				printf("and hit [A-Z] to read white and setup FWA compensation (keyed to letter)\n");
 				printf("[a-z] to read and make FWA compensated reading from keyed reference\n");
-				printf("'r' to set reference, 's' to save spectrum, 'h' to toggle high res.\n");
+				printf("'r' to set reference, 's' to save spectrum,\n");
+				printf("'h' to toggle high res., 'k' to do a calibration\n");
 			}
 			if (uswitch)
 				printf("Hit ESC or Q to exit, instrument switch or any other key to take a reading: ");
@@ -1236,20 +1241,61 @@ int main(int argc, char *argv[])
 			}
 			continue;
 		}
+		if (ch == 'K' || ch == 'k') {	/* Do a calibration */
+			inst_code ev;
+
+			printf("\nDoing a calibration\n");
+
+			/* save current location */
+			if ((cap2 & inst2_xy_locate) && (cap2 & inst2_xy_position)) {
+				for (;;) {		/* retry loop */
+					if ((ev = it->xy_get_location(it, &lx, &ly)) == inst_ok)
+						break;
+					if (ierror(it, ev) == 0)	/* Ignore */
+						continue;
+					break;						/* Abort */
+				}
+				if (ev != inst_ok)
+					break;			/* Abort */
+			}
+
+			ev = inst_handle_calibrate(it, inst_calt_all, inst_calc_none, NULL);
+			if (ev != inst_ok) {	/* Abort or fatal error */
+				break;
+			}
+
+			/* restore location */
+			if ((cap2 & inst2_xy_locate) && (cap2 & inst2_xy_position)) {
+				for (;;) {		/* retry loop */
+					if ((ev = it->xy_position(it, 0, lx, ly)) == inst_ok)
+						break;
+					if (ierror(it, ev) == 0)	/* Ignore */
+						continue;
+					break;						/* Abort */
+				}
+				if (ev != inst_ok)
+					break;			/* Abort */
+			}
+			continue;
+		}
 
 		if (ch >= 'A' && ch <= 'Z') {
-			printf("Measured media to setup FWA compensation '%c'\n",ch);
-			dofwa = 1;
+			printf("\nMeasured media to setup FWA compensation '%c'\n",ch);
+			sufwa = 1;
 			fidx = ch - 'A';
 		}
 		if (ch >= 'a' && ch <= 'z') {
 			fidx = ch - 'a';
+			if (fidx < 0 ||  sp2cief[fidx] == NULL) {
+				printf("\nUnable to apply FWA compensation because it wasn't set up\n");
+				fidx = -1;
+			} else {
+				dofwa = 1;
+			}
 		}
 
-		val.sp.norm = 100.0;
-
 		/* Setup FWA compensation */
-		if (spec && dofwa) {
+		if (sufwa) {
 			double FWAc;
 			xspect insp;			/* Instrument illuminant */
 
@@ -1285,7 +1331,7 @@ int main(int argc, char *argv[])
 			tsp = val.sp;		/* Temp. save spectral reading */
 
 			/* Compute FWA corrected spectrum */
-			if (!dofwa && fidx >= 0 && sp2cief[fidx] != NULL) {
+			if (dofwa != 0) {
 				sp2cief[fidx]->sconvert(sp2cief[fidx], &tsp, NULL, &tsp);
 			}
 
@@ -1349,12 +1395,12 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		if (dofwa == 0) {		/* Not setting up fwa */
+		if (sufwa == 0) {		/* Not setting up fwa, so show reading */
 
 			sp = val.sp;		/* Save as last spectral reading */
 
 			/* Compute the XYZ & Lab */
-			if (!spec) {
+			if (dofwa == 0 && spec == 0) {
 				if (val.XYZ_v == 0 && val.aXYZ_v == 0)
 					error("Instrument didn't return XYZ value");
 				
@@ -1374,7 +1420,7 @@ int main(int argc, char *argv[])
 					error("Instrument didn't return spectral data");
 				}
 	
-				if (fidx < 0 || sp2cief[fidx] == NULL) {
+				if (dofwa == 0) {
 					/* Convert it to XYZ space using uncompensated */
 					sp2cie->convert(sp2cie, XYZ, &sp);
 				} else {
@@ -1382,6 +1428,8 @@ int main(int argc, char *argv[])
 					sp2cief[fidx]->sconvert(sp2cief[fidx], &sp, XYZ, &sp);
 				}
 			}
+
+			/* XYZ is 0 .. 1 range here */
 
 			/* Compute color temperatures */
 			if (ambient || doCCT) {

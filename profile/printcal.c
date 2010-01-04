@@ -546,7 +546,8 @@ int main(int argc, char *argv[]) {
 	profxinf xpi;				/* Extra profile/calibration information */
 	pcaltarg *upct = NULL;		/* User settings of print calibration target */
 	pcaltarg *pct = NULL;		/* Settings of print calibration target */
-	double smooth = 1.0;		/* RSPL Smoothness factor */
+	double smooth = 5.0;		/* RSPL Smoothness factor */
+	double ver_maxde = 2.0;		/* Verify maximum Delta E (1.0 for smooth == 1.0) */
 	int spec = 0;				/* Use spectral data flag */
 	icxIllumeType illum = icxIT_D50;	/* Spectral defaults */
 	xspect cust_illum;			/* Custom illumination spectrum */
@@ -1525,7 +1526,7 @@ int main(int argc, char *argv[]) {
 			avg[j] /= (double)GRES;
 			rms[j] /= (double)GRES;
 			rms[j] = sqrt(rms[j]);
-			if (max[j] > 1.0)
+			if (max[j] > ver_maxde)
 				verified = 0;
 		}
 		if (verb) {

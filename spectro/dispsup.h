@@ -40,6 +40,7 @@ int comport, 		/* COM port used */
 flow_control fc,	/* Serial flow control */
 int dtype,			/* Display type, 0 = unknown, 1 = CRT, 2 = LCD */
 int proj,			/* NZ for projector mode */
+int adaptive,		/* NZ for adaptive mode */
 int nocal,			/* NZ to disable auto instrument calibration */
 disppath *screen,	/* Screen to calibrate. */
 int blackbg,		/* NZ if whole screen should be filled with black */
@@ -94,6 +95,7 @@ struct _disprd {
 	instType itype;		/* Instrument type */
 	int dtype;			/* Display type, 0 = unknown, 1 = CRT, 2 = LCD */
 	int proj;			/* NZ for projector mode */
+	int adaptive;		/* NZ for adaptive mode */
 	int spectral;		/* Spectral values requested/used */
 	int nocal;			/* No automatic instrument calibration */
 	int highres;		/* Use high res mode if available */
@@ -151,6 +153,7 @@ int comport, 		/* COM port used, -99 for fake display */
 flow_control fc,	/* Serial flow control */
 int dtype,			/* Display type, 0 = unknown, 1 = CRT, 2 = LCD */
 int proj,			/* NZ for projector mode */
+int adaptive,		/* NZ for adaptive mode */
 int nocal,			/* No automatic instrument calibration */
 int highres,		/* Use high res mode if available */
 int donat,			/* Use ramdac for native output, else run through current or set ramdac */

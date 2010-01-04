@@ -1160,7 +1160,7 @@ typedef enum {
 	icRenderingIntent intent;			/* Effective (externaly visible) intent */		\
 	icmLookupFunc function;				/* Functionality being used */					\
 	icmLookupOrder order;        		/* Conversion representation search Order */ 	\
-	icmXYZNumber pcswht, whitePoint, blackPoint;	/* White and black point info */	\
+	icmXYZNumber pcswht, whitePoint, blackPoint;	/* White and black point info (absolute XYZ) */	\
 	int blackisassumed;					/* nz if black point tag is missing from profile */ \
 	double toAbs[3][3];					/* Matrix to convert from relative to absolute */ \
 	double fromAbs[3][3];				/* Matrix to convert from absolute to relative */ \
@@ -1216,10 +1216,16 @@ typedef enum {
 	/* Return nz on error */																\
 	int (*init_wh_bk)(struct _icmLuBase *p);												\
 																							\
-	/* Get the LU white and black points in XYZ space. */									\
+	/* Get the LU white and black points in absolute XYZ space. */							\
 	/* Return nz if the black point is being assumed to be 0,0,0 rather */					\
 	/* than being from the tag. */															\
 	int (*wh_bk_points)(struct _icmLuBase *p, double *wht, double *blk);					\
+																							\
+	/* Get the LU white and black points in LU PCS space, converted to XYZ. */				\
+	/* (ie. white and black will be relative if LU is relative intent etc.) */				\
+	/* Return nz if the black point is being assumed to be 0,0,0 rather */					\
+	/* than being from the tag. */															\
+	int (*lu_wh_bk_points)(struct _icmLuBase *p, double *wht, double *blk);					\
 																							\
 	/* Translate color values through profile in effective in and out colorspaces, */		\
 	/* return values: */																	\
@@ -1665,23 +1671,37 @@ extern ICCLIB_API void icmYxy2XYZ(double *out, double *in);
 extern ICCLIB_API void icmXYZ2Luv(icmXYZNumber *w, double *out, double *in);
 
 /* Perceptual Luv to CIE XYZ */
-extern ICCLIB_API void icmLuv(icmXYZNumber *w, double *out, double *in);
+extern ICCLIB_API void icmLuv2XYZ(icmXYZNumber *w, double *out, double *in);
 
+
+/* NOTE :- none of the following seven have been protected */
+/* against arithmmetic issues (ie. for black) */
+
+/* CIE XYZ to perceptual CIE 1976 UCS diagram Yu'v'*/
+/* (Yu'v' is a better chromaticity space than Yxy) */
+extern ICCLIB_API void icmXYZ21976UCS(double *out, double *in);
+
+/* Perceptual CIE 1976 UCS diagram Yu'v' to CIE XYZ */
+extern ICCLIB_API void icm1976UCS2XYZ(double *out, double *in);
 
 /* CIE XYZ to perceptual CIE 1960 UCS */
+/* (This was obsoleted by the 1976UCS, but is still used */
+/*  in computing color temperatures.) */
 extern ICCLIB_API void icmXYZ21960UCS(double *out, double *in);
 
 /* Perceptual CIE 1960 UCS to CIE XYZ */
 extern ICCLIB_API void icm1960UCS2XYZ(double *out, double *in);
 
 /* CIE XYZ to perceptual CIE 1964 WUV (U*V*W*) */
+/* (This is obsolete but still used in computing CRI) */
 extern ICCLIB_API void icmXYZ21964WUV(icmXYZNumber *w, double *out, double *in);
 
 /* Perceptual CIE 1964 WUV (U*V*W*) to CIE XYZ */
 extern ICCLIB_API void icm1964WUV2XYZ(icmXYZNumber *w, double *out, double *in);
 
-/* CIE CIE1960 UCS  to perceptual CIE 1964 WUV (U*V*W*) */
+/* CIE CIE1960 UCS to perceptual CIE 1964 WUV (U*V*W*) */
 extern ICCLIB_API void icm1960UCS21964WUV(icmXYZNumber *w, double *out, double *in);
+
 
 /* The standard D50 illuminant value */
 extern icmXYZNumber icmD50;

@@ -81,15 +81,14 @@
 
  */
 
-#undef USE_MERGE_CLUT_OPT	/* When using inverse A2B table, merge the output luts */
+#undef USE_MERGE_CLUT_OPT	/* [Undef] When using inverse A2B table, merge the output luts */
 							/* with the clut for faster operation, and clipping in */
 							/* Jab space. Turned off because it affects the accuracy too much, */
 							/* and xicc handles Jab clip without this now. */
 
-#define USE_CAM_CLIP_OPT	/* Clip out of gamut in CAM space rather than XYZ or L*a*b* */
-#define CAM_CLIPLOCUS		/* When converting to CAM, clip to the spectrum locus first */ 
-
-#define ENKHACK				/* Enable K hack code */
+#define USE_CAM_CLIP_OPT	/* [Define] Clip out of gamut in CAM space rather than XYZ or L*a*b* */
+#define ENKHACK				/* [Define] Enable K hack code */
+#undef WARN_CLUT_CLIPPING	/* [Undef] Print warning if setting clut clips */
 
 #undef DEBUG		/* Report values of each sample transformed */
 #undef DEBUGC 		/* ie "if (tt)" */		/* Debug condition */
@@ -499,7 +498,7 @@ void devip_devop(void *cntx, double *out, double *in) {
 			icxLuLut *lu = (icxLuLut *)p->in.luo;	/* Safe to coerce */
 			if (p->in.nocurve) {	/* No explicit curve, so do implicit here */
 				/* Since not PCS, in_abs and matrix cannot be valid, */
-				/* so input curve on won is ok to use. */
+				/* so input curve on own is ok to use. */
 				rv |= lu->input(lu, pcsv, win);
 				rv |= lu->clut(lu, pcsv, pcsv);
 			} else {
@@ -696,34 +695,25 @@ void devip_devop(void *cntx, double *out, double *in) {
 	/* lookup the output profiles K value for this PCS */
 	if (p->mode >= 2 && p->out.inking == 7) {
 		double tdevv[MAX_CHAN];	
-		icxLuLut *lu = (icxLuLut *)p->out.luo;		/* Safe to coerce */
-		icxLuLut *tlu = (icxLuLut *)p->out.b2aluo;	/* Safe to coerce */
 
 //printf("~1 dealing with out.inking = %d\n",p->out.inking);
 		if (p->out.alg != icmLutType || p->out.c->header->colorSpace != icSigCmykData)
 			error ("Attempting to use non-CMYK output profile to determine K inking");
 
-		/* Lookup PCS in B2A of output profile to get target K' value */  
+		/* Lookup PCS in B2A of output profile to get target K value */  
 //printf("~1 looking up pcs %f %f %f in B2A\n", pcsv[0], pcsv[1], pcsv[2]);
-		tlu->in_abs(tlu, tdevv, pcsv);
-//printf("~1 after in_abs pcs %f %f %f in B2A\n", tdevv[0], tdevv[1], tdevv[2]);
-		tlu->matrix(tlu, tdevv, tdevv);
-//printf("~1 after matrix pcs %f %f %f in B2A\n", tdevv[0], tdevv[1], tdevv[2]);
-		tlu->input(tlu, tdevv, tdevv);
-//printf("~1 after input curve %f %f %f in B2A\n", tdevv[0], tdevv[1], tdevv[2]);
-		tlu->clut(tlu, tdevv, tdevv);
-//printf("~1 after clut %f %f %f %f in B2A\n", tdevv[0], tdevv[1], tdevv[2], tdevv[3]);
-		rv |= tlu->output(tlu, tdevv, tdevv);
-//printf("~1 after out curve %f %f %f %f in B2A\n", tdevv[0], tdevv[1], tdevv[2], tdevv[3]);
-		rv |= tlu->out_abs(tlu, tdevv, tdevv);
-//printf("~1 after out_abs curve %f %f %f %f in B2A\n", tdevv[0], tdevv[1], tdevv[2], tdevv[3]);
-		if (!p->out.nocurve) {	/* Anticipate output per channel curve effect */
-			/* This should really be inverse of per channel output curve being created */ 
-			rv |= lu->input(lu, tdevv, tdevv);	/* We assume  output curve is inv A2B input curve */
-//printf("~1 after input curve %f %f %f %f of A2B\n", tdevv[0], tdevv[1], tdevv[2], tdevv[3]);
-		}
+		p->out.b2aluo->lookup(p->out.b2aluo, tdevv, pcsv);
+//printf("~1 resulting dev %f %f %f %f\n", tdevv[0], tdevv[1], tdevv[2], tdevv[3]);
+
 		if (p->out.locus) {
-			lu->clut_locus(lu, locus, pcsv, tdevv);	/* Compute locus values */
+			double tpcsv[MAX_CHAN];	
+			icxLuLut *lu = (icxLuLut *)p->out.luo;		/* Safe to coerce */
+
+			/* Convert PCS to PCS' ready for locus lookup */
+			lu->in_abs(lu, tpcsv, pcsv);
+			lu->matrix(lu, tpcsv, tpcsv);
+			lu->input(lu, tpcsv, tpcsv);
+			lu->clut_locus(lu, locus, tpcsv, tdevv);	/* Compute locus values */
 		} else {
 			for (i = 0; i < p->out.chan; i++)		/* Target is K value */
 				locus[i] = tdevv[i];
@@ -834,7 +824,7 @@ void devip_devop(void *cntx, double *out, double *in) {
 					locus[0],locus[1],locus[2],locus[3],pcsv[0],pcsv[1],pcsv[2],pcsv[3]);
 #endif
 
-					/* locusp[] contains possible K target or locus value, */
+					/* locus[] contains possible K target or locus value, */
 					/* so copy it to out[] so that inv_clut will use it. */
 					for (i = 0; i < p->out.chan; i++)
 						out[i] = locus[i];
@@ -1113,7 +1103,9 @@ main(int argc, char *argv[]) {
 	li.out.ink.klimit = -1.0;			/* Default no black limit */
 	li.out.ink.KonlyLmin = 0;			/* Use normal black Lmin for locus */
 	li.out.ink.c.Ksmth = ICXINKDEFSMTH;	/* default curve smoothing */
+	li.out.ink.c.Kskew = ICXINKDEFSKEW;	/* default curve skew */
 	li.out.ink.x.Ksmth = ICXINKDEFSMTH;
+	li.out.ink.x.Kskew = ICXINKDEFSKEW;
 	li.out.inking  = 4;					/* Default ramp K */
 	li.out.locus   = 0;					/* Default K value target */
 	li.out.nocurve = 0;					/* Preserve device linearisation curve */
@@ -2039,9 +2031,6 @@ main(int argc, char *argv[]) {
 #ifdef USE_MERGE_CLUT_OPT
 		fl |= ICX_MERGE_CLUT;
 #endif
-#ifdef CAM_CLIPLOCUS
-		fl |= ICX_CAM_LOCUSCLIP;
-#endif
 
 #ifdef NEVER
 		printf("~1 input space flags = 0x%x\n",fl);
@@ -2150,9 +2139,6 @@ main(int argc, char *argv[]) {
 #endif
 #ifdef USE_CAM_CLIP_OPT
 			fl |= ICX_CAM_CLIP;
-#endif
-#ifdef CAM_CLIPLOCUS
-			fl |= ICX_CAM_LOCUSCLIP;
 #endif
 			if (li.verb)
 				printf("Loading output inverse A2B table\n");
@@ -3004,8 +2990,11 @@ main(int argc, char *argv[]) {
 			if (li.verb) {
 				printf("\n");
 			}
+#ifdef WARN_CLUT_CLIPPING
 			if (wr_icc->warnc)
 				warning("Values clipped in setting device link LUT");
+#endif /* WARN_CLUT_CLIPPING */
+
 #endif	/* !DEBUG_ONE */
 		}
 

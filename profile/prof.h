@@ -34,6 +34,7 @@ typedef enum {
 /* Output or Display device */
 void make_output_icc(
 	prof_atype ptype,		/* Profile output type */
+	int mtxtoo,				/* NZ if matrix tags should be created for Display XYZ cLUT */
 	icmICCVersion iccver,	/* ICC profile version to create */
 	int verb,				/* Vebosity level, 0 = none */
 	int iquality,			/* A2B table quality, 0..2 */

@@ -584,6 +584,7 @@ ipatch *vals) {		/* Pointer to array of values */
 				tvals[i].sp.spec_n = 31;
 				tvals[i].sp.spec_wl_short = 400.0;
 				tvals[i].sp.spec_wl_long = 700.0;
+				tvals[i].sp.norm = 100.0;
 			}
 
 			/* Set to ASCII */
@@ -766,6 +767,7 @@ ipatch *vals) {		/* Pointer to array of instrument patch values */
 			vals[i].sp.spec_n = 31;
 			vals[i].sp.spec_wl_short = 400.0;
 			vals[i].sp.spec_wl_long = 700.0;
+			vals[i].sp.norm = 100.0;
 		}
 
 		/* Set to ASCII */
@@ -950,6 +952,7 @@ ipatch *val) {		/* Pointer to instrument patch value */
 		val->sp.spec_n = 31;
 		val->sp.spec_wl_short = 400.0;
 		val->sp.spec_wl_long = 700.0;
+		val->sp.norm = 100.0;
 
 		/* Set to ASCII */
 		if ((ev = dtp20_command(p, "001BCF\r", buf, MAX_MES_SIZE, 0.5)) != inst_ok)

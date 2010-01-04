@@ -227,6 +227,7 @@ main(
 	}
 
 	ink.c.Ksmth = ICXINKDEFSMTH;	/* Default smoothing */
+	ink.c.Kskew = ICXINKDEFSKEW;	/* default curve skew */
 	ink.c.Kstle = 0.5;		/* Min K at white end */
 	ink.c.Kstpo = 0.5;		/* Start of transition is at white */ 	
 	ink.c.Kenle = 0.5;		/* Max K at black end */

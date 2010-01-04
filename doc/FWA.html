@@ -46,8 +46,8 @@ between 0 and 100% by dividing by it's measurement illuminant's
 intensity at each
 wavelength. When it comes time to use that measurement to create an ICC
 profile,
-the intensity of the illumination that is assumed is going to be used
-to view the sample at each wavelength (typically D50 for standard ICC
+the intensity of the assumed viewing illumination at each wavelength
+(typically D50 for standard ICC
 profiles) is then multiplied by the reflectance
 at each wavelength, and the overall spectral levels are in this way
 converted
@@ -55,7 +55,8 @@ into tri-stimulus values using an observer model.<br>
 <br>
 So while the instrument measures with one type of light (type A), it
 returns a measurement as if it had been measured under a different kind
-of light (D50) by making use of a simple model of light reflection.<br>
+of light (D50) by making use of a simple model of light reflection of
+the media.<br>
 <br>
 Notice that a key assumption of this simple model is that the light
 that

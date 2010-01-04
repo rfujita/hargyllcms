@@ -210,8 +210,8 @@ Simplex grid angle 0.0 - 0.5 for B.C.C. grid, default -2047840407</span><br
 <span style="font-family: monospace;">&nbsp; </span><a
  style="font-family: monospace;" href="#A">-A adaptation</a><span
  style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Degree
-of adaptation for preconditioning in OFPS 0.0 - 1.0 (default 0.0)</span><br
- style="font-family: monospace;">
+of adaptation of OFPS 0.0 - 1.0 (default 0.1, 1.0 if -c profile
+provided)</span><br style="font-family: monospace;">
 <span style="font-family: monospace;">&nbsp;</span><a
  style="font-family: monospace;" href="#t">-t</a><span
  style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -440,10 +440,12 @@ angle that the body centered grid distribution has.<br>
 <br>
 <a name="A"></a> The <b>-A <i>adaptation</i></b> parameter sets the
 degree of adaptation to the known device characteristics, used by the
-default full spread iterative &amp; adaptive algorithm. A profile
+default full spread OFPS algorithm. A profile
 should be provided using the <span style="font-weight: bold;">-c</span>
-parameter. By
-default the adaptation is 0.0, (none).<br>
+parameter if <span style="font-weight: bold; font-style: italic;">adaptation</span>
+is set above a low level. By
+default the adaptation is 0.1 (low), and 1.0 (maximum) if <span
+ style="font-weight: bold;">-c profile</span> is provided<br>
 <br>
 <a name="l"></a> The <b>-l</b> flag and parameter sets a total ink
 limit (Total
@@ -490,12 +492,14 @@ up to the ink limits.<br>
 an <a href="File_Formats.html#ICC">ICC</a> or <a
  href="File_Formats.html#MPP">MPP</a> pre-conditioning profile, for
 estimating perceptual distances and colorspace curvature, used in
-optimizing the full spread test point placement. Normally a previous
+optimizing the full spread test point placement,or in creating
+perceptualy spaced distributions. Normally a previous
 profile for this or a similar device will be used, or a simpler,
 preliminary profile will be created and used. If no such profile is
-specified, a default device space model is used.&nbsp; Note that this
+specified, a default device space model is used. Note that this
 will only have an effect if an algorithm that uses the perceptual
-placement, such as <span style="font-weight: bold;">-R -I</span>, or a
+placement, such as <span style="font-weight: bold;">-R, -Q, -I</span>,
+or the default OFPS with an
 <span style="font-weight: bold;">-A</span> value &gt; 0.0.<br>
 <br>
 <a name="F"></a> The <b>-F</b> flag and parameters is used to define

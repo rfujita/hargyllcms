@@ -669,6 +669,7 @@ ipatch *vals) { 		/* Pointer to array of values */
 				vals[patch].sp.spec_n = 36;
 				vals[patch].sp.spec_wl_short = 380;
 				vals[patch].sp.spec_wl_long = 730;
+				vals[patch].sp.norm = 100.0;
 				
 				for (i = 0; i < vals[patch].sp.spec_n; i++)
 					vals[patch].sp.spec[i] = 100.0 * (double)spec[i];
@@ -954,6 +955,7 @@ ipatch *val) {		/* Pointer to instrument patch value */
 			val->sp.spec_n = 36;
 			val->sp.spec_wl_short = 380;
 			val->sp.spec_wl_long = 730;
+			val->sp.norm = 100.0;
 			for (i = 0; i < val->sp.spec_n; i++)
 				val->sp.spec[i] = 100.0 * (double)spec[i];
 		}
@@ -1022,8 +1024,15 @@ ipatch *val) {		/* Pointer to instrument patch value */
 			val->sp.spec_n = 36;
 			val->sp.spec_wl_short = 380;
 			val->sp.spec_wl_long = 730;
-			for (i = 0; i < val->sp.spec_n; i++)
-				val->sp.spec[i] = (double)spec[i];
+			if ((p->mode & inst_mode_illum_mask) == inst_mode_emission) {
+				val->sp.norm = 1.0;
+				for (i = 0; i < val->sp.spec_n; i++)
+					val->sp.spec[i] = (double)spec[i];
+			} else {
+				val->sp.norm = 100.0;
+				for (i = 0; i < val->sp.spec_n; i++)
+					val->sp.spec[i] = 100.0 * (double)spec[i];
+			}
 		}
 
 		/* Convert to desired illuminant XYZ */
@@ -1092,9 +1101,11 @@ ipatch *val) {		/* Pointer to instrument patch value */
 			val->sp.spec_wl_short = 380;
 			val->sp.spec_wl_long = 730;
 			if ((p->mode & inst_mode_illum_mask) == inst_mode_emission) {
+				val->sp.norm = 1.0;
 				for (i = 0; i < val->sp.spec_n; i++)
 					val->sp.spec[i] = (double)spec[i];
 			} else {
+				val->sp.norm = 100.0;
 				for (i = 0; i < val->sp.spec_n; i++)
 					val->sp.spec[i] = 100.0 * (double)spec[i];
 			}

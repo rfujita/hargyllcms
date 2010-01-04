@@ -58,8 +58,8 @@ struct _ipatch {
 	double Lab[3];		/* Lab value */
 
 	xspect sp;			/* Spectrum. sp.spec_n > 0 if valid */
-						/* Reflectance 0.0 .. 100.0 */
-						/* or mW/m^2 */
+						/* Reflectance/Transmittance 0.0 .. 100.0, norm = 100.0 */
+						/* or mW/m^2, norm = 1.0  */
 
 	double duration;	/* Apparent total duration in seconds (flash measurement) */
 

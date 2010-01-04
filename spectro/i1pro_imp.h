@@ -945,10 +945,10 @@ typedef enum {
 /* Linearisation uses Polinomial equation, ie: y = c0 + c1 * x + c2 * x^2 + c3 * x^3 etc. */
 /* and is applied to the raw (integer) sensor data. */
 
-	key_ng_lin		= 0x03e9,	/* double[4] */
+	key_ng_lin		= 0x03e8,	/* double[4] */
 								/* Normal gain polinomial linearisation coefficients */
 
-	key_hg_lin		= 0x03e8,	/* double[4] */
+	key_hg_lin		= 0x03e9,	/* double[4] */
 								/* High gain polinomial linearisation coefficients */
 
 	key_min_int_time= 0x04c5,	/* double - Minumum integration time */

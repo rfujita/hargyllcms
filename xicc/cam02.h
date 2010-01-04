@@ -136,7 +136,8 @@ struct _cam02 {
 						/* Ignored if Ev is set */
 		double Yf,		/* Flare as a fraction of the reference white (range 0.0 .. 1.0) */
 		double Fxyz[3],	/* The Flare white coordinates (typically the Ambient color) */
-		int hk			/* Flag, NZ to use Helmholtz-Kohlraush effect */
+		int hk,			/* Flag, NZ to use Helmholtz-Kohlraush effect */
+		int noclip		/* Flag, NZ to not clip to useful gamut before XYZ_to_cam() */
 	);
 
 	/* Conversions. Return nz on error */
@@ -183,6 +184,7 @@ struct _cam02 {
 
 	/* Option flags, code not always enabled */
 	int hk;				/* Use Helmholtz-Kohlraush effect */
+	int noclip;			/* Flag, NZ to not clip to useful gamut before XYZ_to_cam() */
 	int trace;			/* Trace values through computation */
 	int retss;			/* Return ss rather than Jab */
 	int range;			/* (for cam02ref.h) return on range error */ 

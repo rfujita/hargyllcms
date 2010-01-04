@@ -94,7 +94,6 @@ void usage(char *diag, ...) {
 	fprintf(stderr," -p              Use slow precise correction.\n");
 	fprintf(stderr," -k              Check fast result against precise, and report.\n");
 	fprintf(stderr," -r n            Override the default CLUT resolution\n");
-	fprintf(stderr," -o intent       Choose last profiles intent\n");
 	fprintf(stderr," -t n            Choose TIFF output encoding from 1..n\n");
 	fprintf(stderr," -a              Read and Write planes > 4 as alpha planes\n");
 	fprintf(stderr," -I              Ignore any file or profile colorspace mismatches\n");
@@ -104,10 +103,12 @@ void usage(char *diag, ...) {
 	fprintf(stderr,"                 Then for each profile in sequence:\n");
 	fprintf(stderr,"   -i intent       p = perceptual, r = relative colorimetric,\n");
 	fprintf(stderr,"                   s = saturation, a = absolute colorimetric\n");
+	fprintf(stderr,"   -o order        n = normal (priority: lut > matrix > monochrome)\n");
+	fprintf(stderr,"                   r = reverse (priority: monochrome > matrix > lut)\n");
 	fprintf(stderr,"   profile.[%s | tiff]  Device, Link or Abstract profile\n",ICC_FILE_EXT_ND);
 	fprintf(stderr,"                   ( May be embeded profile in TIFF file)\n");
 	fprintf(stderr,"                 or each calibration file in sequence:\n");
-	fprintf(stderr,"   -d dir          f = forward (default), b = backwards\n");
+	fprintf(stderr,"   -d dir          f = forward cal. (default), b = backwards cal.\n");
 	fprintf(stderr,"   calbrtn.cal     Device calibration file.\n");
 	fprintf(stderr,"\n");
 	fprintf(stderr," infile.tif      Input TIFF file in appropriate color space\n");
@@ -557,6 +558,7 @@ struct _profinfo {
 	icmHeader *h;						
 	icRenderingIntent intent;			/* Rendering intent chosen */
 	icmLookupFunc func;					/* Type of function to use in lookup */
+	icmLookupOrder order;				/* tag search order to use */
 	icmLuAlgType alg;					/* Type of lookup algorithm used */
 	int clutres;						/* If this profile uses a clut, what's it's res. ? */
 	icColorSpaceSignature natpcs;		/* Underlying natural PCS */
@@ -861,7 +863,7 @@ main(int argc, char *argv[]) {
 	char dst_pname[MAXNAMEL+1] = "";		/* Destination embeded profile file name */
 	icc *deicc = NULL;						/* Destination embedded profile (if any) */
 	icRenderingIntent next_intent;			/* Rendering intent for next profile */
-	icRenderingIntent last_intent;			/* Rendering intent for next profile */
+	icmLookupOrder next_order;				/* tag search order for next profile */
 	icmLookupFunc next_func;				/* Direction for next calibration */
 	int last_dim;							/* Next dimentionality between conversions */
 	icColorSpaceSignature last_colorspace;	/* Next colorspace between conversions */
@@ -916,8 +918,8 @@ main(int argc, char *argv[]) {
 	su.nprofs = 0;
 	su.profs = NULL;
 	next_intent = icmDefaultIntent;
-	last_intent = icmDefaultIntent;
 	next_func = icmFwd;
+	next_order = icmLuOrdNorm;
 
 	/* Process the arguments */
 	for(fa = 1;fa < argc;fa++) {
@@ -1008,6 +1010,24 @@ main(int argc, char *argv[]) {
 				}
 			}
 
+			/* Next profile search order */
+			else if (argv[fa][1] == 'o') {
+				fa = nfa;
+				if (na == NULL) usage("Missing argument to -o flag");
+    			switch (na[0]) {
+					case 'n':
+					case 'N':
+						next_order = icmLuOrdNorm;
+						break;
+					case 'r':
+					case 'R':
+						next_order = icmLuOrdRev;
+						break;
+					default:
+						usage("Unknown argument '%c' to -o flag",na[0]);
+				}
+			}
+
 			/* Next calibraton direction */
 			else if (argv[fa][1] == 'd') {
 				fa = nfa;
@@ -1023,32 +1043,6 @@ main(int argc, char *argv[]) {
 						break;
 					default:
 						usage("Unknown argument '%c' to -d flag",na[0]);
-				}
-			}
-
-			/* Last profile Intent */
-			else if (argv[fa][1] == 'o' || argv[fa][1] == 'O') {
-				fa = nfa;
-				if (na == NULL) usage("Missing argument to -o flag");
-    			switch (na[0]) {
-					case 'p':
-					case 'P':
-						last_intent = icPerceptual;
-						break;
-					case 'r':
-					case 'R':
-						last_intent = icRelativeColorimetric;
-						break;
-					case 's':
-					case 'S':
-						last_intent = icSaturation;
-						break;
-					case 'a':
-					case 'A':
-						last_intent = icAbsoluteColorimetric;
-						break;
-					default:
-						usage("Unknown argument '%c' to -i flag",na[0]);
 				}
 			}
 
@@ -1082,10 +1076,12 @@ main(int argc, char *argv[]) {
 			su.profs[su.nprofs].name[MAXNAMEL] = '\000';
 			su.profs[su.nprofs].intent = next_intent;
 			su.profs[su.nprofs].func = next_func;
+			su.profs[su.nprofs].order = next_order;
 
 			su.nprofs++;
 			next_intent = icmDefaultIntent;
 			next_func = icmFwd;
+			next_order = icmLuOrdNorm;
 		} else {
 			break;
 		}
@@ -1101,13 +1097,6 @@ main(int argc, char *argv[]) {
 
 	su.fclut = su.first = 0;
 	su.lclut = su.last = su.nprofs-1;
-
-	/* Implement the "last intent" option */
-	if (su.nprofs > 0) {
-		if (su.profs[su.last].intent == icmDefaultIntent
-		 && last_intent != icmDefaultIntent)
-			su.profs[su.last].intent = last_intent;
-	}
 
 /*
 
@@ -1259,7 +1248,7 @@ main(int argc, char *argv[]) {
 
 			/* Get a conversion object */
 			if ((su.profs[i].luo = su.profs[i].c->get_luobj(su.profs[i].c, su.profs[i].func,
-			                          su.profs[i].intent, icmSigDefaultData, icmLuOrdNorm)) == NULL)
+			              su.profs[i].intent, icmSigDefaultData, su.profs[i].order)) == NULL)
 				error ("%d, %s from '%s'",su.profs[i].c->errc, su.profs[i].c->err, su.profs[i].name);
 		
 			/* Get details of conversion */
@@ -1507,6 +1496,7 @@ main(int argc, char *argv[]) {
 				op->del(op);
 				printf("Direction = %s\n",icm2str(icmTransformLookupFunc, su.profs[i].func));
 				printf("Intent = %s\n",icm2str(icmRenderingIntent, su.profs[i].intent));
+				printf("Algorithm = %s\n",icm2str(icmLuAlg, su.profs[i].alg));
 			} else {
 				printf("Calibration %d '%s':\n",i,su.profs[i].name);
 				printf("Direction = %s\n",icm2str(icmTransformLookupFunc, su.profs[i].func));

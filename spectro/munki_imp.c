@@ -6130,7 +6130,6 @@ munki_code munki_conv2XYZ(
 		vals[i].sp.spec_n = 0;
 		vals[i].duration = 0.0;
 	
-		vals[i].sp.norm = 1.0;
 		vals[i].sp.spec_n = nwl;
 		vals[i].sp.spec_wl_short = wl_short;
 		vals[i].sp.spec_wl_long = m->wl_long;
@@ -6139,10 +6138,12 @@ munki_code munki_conv2XYZ(
 			for (j = six, k = 0; j < m->nwav; j++, k++) {
 				vals[i].sp.spec[k] = specrd[i][j] * sms;
 			}
+			vals[i].sp.norm = 1.0;
 		} else {
 			for (j = six, k = 0; j < m->nwav; j++, k++) {
 				vals[i].sp.spec[k] = 100.0 * specrd[i][j] * sms;
 			}
+			vals[i].sp.norm = 100.0;
 		}
 
 		/* Set the XYZ */
@@ -6153,6 +6154,9 @@ munki_code munki_conv2XYZ(
 		} else {
 			conv->convert(conv, vals[i].XYZ, &vals[i].sp);
 			vals[i].XYZ_v = 1;
+			vals[i].XYZ[0] *= 100.0;
+			vals[i].XYZ[1] *= 100.0;
+			vals[i].XYZ[2] *= 100.0;
 		}
 
 #else	/* SELF_CONT */
@@ -6181,7 +6185,7 @@ munki_code munki_conv2XYZ(
 			for (norm = 0.0, j = 0; j < 36; j++) {
 				norm += obsv[0][1][j] * illum_D50[j];
 			}
-			norm = 100.0/norm;
+			norm = 100.0/norm;		/* Return value is 0 .. 100 */
 			
 			for (k = 0; k < 3; k++)
 				vals[i].XYZ[k] = 0.0;

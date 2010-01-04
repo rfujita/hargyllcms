@@ -131,7 +131,7 @@ Use "-g240" for SMPTE 240M curve </span></font><font size="-1"><span
 the target response curve actual technical gamma<br>
 &nbsp;<a href="#f">-f [degree]</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Amount of black level accounted for with output offset (default all
-input offset)<br>
+output offset)<br>
 &nbsp;<a href="#a">-a ambient</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Use viewing condition adjustment for ambient in Lux<br>
 </span></font><font size="-1"><span style="font-family: monospace;">&nbsp;<a
@@ -192,6 +192,11 @@ Disable auto calibration of instrument</span></font><br>
 &nbsp;&nbsp;&nbsp;&nbsp; Use high resolution spectrum mode (if
 available)<br>
 </span></font><font size="-1"><span style="font-family: monospace;">&nbsp;</span><a
+ style="font-family: monospace;" href="#V">-V</a><span
+ style="font-family: monospace;">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp; Use adaptive measurement mode (if available)</span></font><br>
+<font size="-1"><span style="font-family: monospace;">&nbsp;</span><a
  style="font-family: monospace;" href="#M">-M "command"</a><span
  style="font-family: monospace;">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Invoke shell "command" each
@@ -474,9 +479,11 @@ display is capable of.<br>
 Set the
 target response curve gamma. This is
 normally an exponential curve (output = input ^gamma), and defaults to
-2.4 on MSWindows&nbsp; and Linux/Unix (which is typical for a CRT type
-display), and 1.8 on a Macintosh (OS X). Four pre-defined curves can be
-used as well:&nbsp; the sRGB colorspace response curve, which is an
+2.4 on MSWindows and Macintosh OS X 10.6 or latter and Linux/Unix
+(which is typical of a CRT type
+displays real response), and 1.8 on a Macintosh (prior to OS X 10.6).
+Four pre-defined curves can be
+used as well: the sRGB colorspace response curve, which is an
 exponent curve with a
 straight segment at the dark end and an overall response of
 approximately gamma 2.2 (<span style="font-weight: bold;">-gs</span>),
@@ -486,7 +493,7 @@ video standard response curve (<span style="font-weight: bold;">-g709</span>)
 and the SMPTE 240M video standard response curve (<span
  style="font-weight: bold;">-g240</span>) <br>
 <br>
-&nbsp;Note that a
+<span style="font-weight: bold;">Note</span> that a
 real display can't reproduce any of these ideal curves, since it will
 have a non-zero black point, whereas all the ideal curves assume zero
 light at zero input. In the case of a gamma curve target, dispcal uses
@@ -494,17 +501,24 @@ an actual technical power curve shape that aims for the same relative
 output at 50% input
 as the ideal gamma power curve. To allow for the non-zero black level
 of a real display, by default <span style="font-weight: bold;">dispcal</span>
-will offset and scale the target curve so that zero input gives the
-actual black level of the display (input offset). This ensures the most
+will offset the target curve values so that zero input gives the
+actual black level of the display (output offset). This ensures that
+the target curve better corresponds to the typical natural behavior of
+displays, but it may not be the most
 visually even progression from display minimum, but this behavior can
 be changed using the <span style="font-weight: bold;">-f</span> option
 (see below).<br>
 <br>
-<span style="font-weight: bold;">Note</span> that many color spaces are
-encoded with, and labelled as having a gamma of approximately 2.2 (ie.
-sRGB, REC 709, SMPTE 240M), but are actually intended to be displayed
+<span style="font-weight: bold;">Also note</span> that many color
+spaces are
+encoded with, and labelled as having a gamma of approximately<span
+ style="font-weight: bold;"> 2.2</span> (ie.
+sRGB, REC 709, SMPTE 240M, Macintosh OS X 10.6), but are actually
+intended to be displayed
 on a display with a typical CRT gamma of <span
- style="font-weight: bold;">2.4</span>. This is because this 2.2 gamma
+ style="font-weight: bold;">2.4</span> viewed in a darkened
+environment. This is because this <span style="font-weight: bold;">2.2</span>
+gamma
 is a source gamma encoding in bright viewing conditions such as a
 television studio, while typical display viewing conditions are quite
 dark by comparison, and a contrast expansion of (approx.) gamma 1.1 is
@@ -516,8 +530,11 @@ REC 709
 you want!</span>
 What you probably want to do, is to set the gamma curve to about gamma
 2.4, so that the contrast range is expanded appropriately, or
-alternatively use sRGB or REC 709 but also use the <span
- style="font-weight: bold;">-a</span> parameter to specify the ambient
+<span style="text-decoration: underline; font-weight: bold;">alternatively</span>
+use sRGB or REC 709 or a gamm of 2.2 but <span
+ style="font-weight: bold;">also</span> use the <span
+ style="font-weight: bold;">-a</span> parameter to specify the actual
+ambient
 viewing conditions, so that <span style="font-weight: bold;">dispcal</span>
 can make an appropriate contrast enhancement. If your instrument is
 capable of measuring ambient light levels, then you can do so during
@@ -525,7 +542,8 @@ the interactive display control adjustment. See
 &lt;http://www.color.org/sRGB.xalter&gt; for details of how sRGB is
 intended to be used.<br>
 <br>
-It is hard to know whether Apple Macintosh computers should
+It is hard to know whether Apple Macintosh computers prior to OS X 10.6
+should
 also have such an adjustment, since it is not really possible to know
 whether colors labelled as being in such a colorspace are actually
 encoded in that gamma with the expectation that they will be displayed
@@ -554,22 +572,29 @@ explained in for the <span style="font-weight: bold;">-g</span> and <span
  style="font-weight: bold;">-G</span> options, real displays do not
 have a zero black response, while all the target response curves do, so
 this has to be allowed for in some way. The default way of handling
-this (equivalent to -f 0)&nbsp; is to offset and scale the input values
+this (equivalent to -f 1.0)&nbsp; is to allow for this at the output of
+the ideal
+response curve, by offsetting and scaling the output values.<span
+ style="font-weight: bold;"></span> This defined a curve that will
+match the
+responses that many other systems provide and may be a better match to
+the natural response of the display, but will give a
+less visually even response from black<span style="font-weight: bold;"></span>.
+The other alternative is to offset and scale the input values
 into the ideal response
 curve so that zero input gives the actual non-zero display response.
-This ensures the most visually even progression from display minimum.
-The other alternative is to allow for this at the output of the ideal
-response curve, by offsetting and scaling the output values.<span
- style="font-weight: bold;"></span> This can be done by using the <span
- style="font-weight: bold;">-f</span> option. This will probably give a
-less progressive response from black, but may better match the
-responses that other systems provide. A further subtlety is to provide
+This ensures the most visually even progression from display minimum,
+but might be hard to achieve since it is different to the naturally
+response of a display.
+A subtlety is to provide
 a split between how much of the offset is accounted for as input to the
 ideal response curve, and how much is accounted for at the output, and
 this can be done by providing a parameter <span
  style="font-weight: bold;">-f degree</span>, where the degree is 0.0
 accounts for it all as input offset, and 1.0 accounts for all of it as
-output offset.<br>
+output offset. If <span style="font-weight: bold;">-f</span> is used
+without a specified degree, a degree of 0.0 is assumed, the opposite of
+the default.<br>
 <br>
 <a name="a"></a><span style="font-weight: bold;">-a ambient</span>: As
 explained for the <span style="font-weight: bold;">-g</span>
@@ -597,14 +622,15 @@ levels. <br>
 Normally
 dispcal will attempt to make all colors
 down the neutral axis (R=G=B) have the same hue as the chosen white
-point (equivalent to <span style="font-weight: bold;">-k 1.0</span>).
+point (ie. default is <span style="font-weight: bold;">-k 1.0</span>).
 Near the black point, red, green or blue can only be added, not
 subtracted from zero, so the process of making the near black colors
 have the desired hue, will <span style="font-weight: bold;">lighten</span>
 them to some extent. For a device
 with a good contrast ratio or a black point that has nearly the same
 hue as the white, this is not a problem. If the device contrast ratio
-is not so good, and the black hue is noticeably different to that of
+is not so good, and the native black hue is noticeably different to
+that of
 the chosen white point (which is often the case for <span
  style="font-weight: bold;">LCD</span> type displays, or <span
  style="font-weight: bold;">CRT</span> type displays with one channel
@@ -620,12 +646,13 @@ default a factor of <span style="font-weight: bold;">0.0</span> is
 used for <span style="font-weight: bold;">LCD</span>
 type displays, but the <span style="font-weight: bold;">-k</span>
 option allows overriding these with a custom value between 0.0 (no
-correction) to 1.0 (full correction). If less than full correction is
+correction of black) to 1.0 (full correction of black). If less than
+full correction is
 chosen, then the resulting calibration curves will have the target
 white point down most of the curve, but will then blend over to the
 native or compromise black point that is blacker, but not of the right
 hue. The rate of this blend can be controlled with the <span
- style="font-weight: bold;">-A</span> parameter.<br>
+ style="font-weight: bold;">-A</span> parameter (see below).<br>
 <br>
 <a name="A"></a><span style="font-weight: bold;">-A rate</span>:&nbsp;
 If the black point is not being set completely to the same hue as the
@@ -757,6 +784,12 @@ such as the Eye-One Pro.
 See <a href="instruments.html">Operation of particular instruments</a>
 for more details. This may give better accuracy for display
 measurements.<br>
+<br>
+<a name="V"></a> The -<span style="font-weight: bold;">V</span> option
+uses adaptive emission measurement mode, if the instrument supports it,
+such as the Eye-One Pro. This may give better accuracy for low level
+measurements, but may be more inconsistent overall due to the varying
+integration times. Overall measurement time will probably be longer.<br>
 <br>
 <a name="M"></a> The -<span style="font-weight: bold;">M</span> <span
  style="font-weight: bold;">"command" </span>option

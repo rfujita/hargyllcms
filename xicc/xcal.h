@@ -16,7 +16,8 @@
  *
  * This class allows reading and using a calibration file.
  * Creation is currently left up to specialized programs (dispcal, printcal).
- *
+ * This is also used by xicc to automatically take calibration into account
+ * when computing ink limits.
  */
 
 struct _xcal {

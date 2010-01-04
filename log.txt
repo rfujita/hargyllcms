@@ -2,7 +2,95 @@
 Argyll CMS change log
 =====================
 
-Version 1.1.0 RC2 (1st December 2009)
+Version 1.1.0 RC3 (26 December 2009) 
+-----------------
+
+*	Fixed bug in Linux profile uninstall (dispwin -U)
+	(Typo in path causes uninstall to fail).
+
+*	Changed MSWindows athread implementation to kill a thread
+	that hasn't terminated on thread object deletion. This
+	isn't nice, but avoids the problem of the i1pro switch handler
+	thread exiting after 600 seconds and then accessing
+	a free'd structure when dispread -K is used.
+
+*	Change colprof XYZ B2A table scaling to make better
+	use of the cLUT table grid resolution.
+
+*	Fixed bugs in black generation rule to do with white->black point
+	calculations, scale and input/output curve handling. Changed
+	xicclu -g to better correspond with -k p parameters.
+	Changed xlut CMYK black locus handling to pick largest K value
+	when there are multiple K locus segments and the desired K 
+	doesn't fall on any segment, to give better K continuity.
+	Added "skew" adjustment to K generation rule to make
+	the curve it better fit typical device behaviour.
+	Updated tutorial to reflect these changes.
+	Note that the -kp parameter values will have to
+	be re-established for a particular device using V1.1.0 RC3.
+
+*	Changed profile/colprof to generate matrix tags for Display XYZ PCS cLUT profiles,
+	to improve compatibility with other CMMs.
+	By default (-ax) the matrix tags will be a dummy transform that swaps red and green
+	so that it is obvious if the matrix is being used instead of the cLUT, and so it does
+	not increase profiling time.  Using -aX will create real matrix tags.
+
+*	Removed deprecated imdi/cctiff -o option, and added per profile -o option to set the
+	tag search order so as to be able to test profiles that have both matrix and
+	cLUT tags.
+
+*	Removed general cLUT clip warnings, and added a specific RGB display/output
+	device warning if a primary can't be encoded in L*a*b* PCS.
+
+*	Fixed bug in i1pro driver - the linearization factors were being swapped
+	between low and high gain.  This improves the absolute luminance calibration,
+	and may have subtle effects on the accuracy of other readings.
+
+*	Added -V option to dispcal and dispread to allow using the
+	adaptive mode of the i1pro for display measurement.
+	This may give better low level readings ?
+
+*	Changd targen so that it doesn't slow down as badly
+	when a very large number of fixed points are used together
+	with full spread points.
+
+*	Improved profile/logo2cgats so that it errors
+	on a wrong spectral field type.
+
+*	Change spectro/dispcal to default to -f 1.0 (assume
+	black is all output offset) to make it work in more
+	sympathy to a typical display response. This may give
+	better fit and lessen the chance of color tints 
+	due to a poor fit.
+
+*	Increased profile/printcal curve smoothing to reduce
+	the effect of noise.
+
+*	Changed chartread strip reading mode to allow navigating about the
+	strips, saving a partially read chart, and resuming a partially
+	read chart (chartread -r).
+	Also added a "next unread patch" key to the patch by patch mode.
+	Chartread won't exeit automaticcaly now, once all the patches have
+	been read (in case any patches need to be re-read), so the 'd'
+	key must be hit to finish.
+	Removed chartread -a option (it always saves the patch locations now).
+	Added a -I option to allow re-using .ti2 files on a chart printed
+	with different calibration curves.
+
+*	Modified xicc/cam02 to clip the blue to avoid
+	crazy behaviour outside the spectrum locus.
+	Removed previous attempt at spectrum locus clipping.
+
+*	Fixed bug in Spyder 3 driver that can cause readings
+	to be scaled by a factor of 16. (This depends on
+	when the Spyder was manufactured.)
+
+*	Fixed bug in adding CIE illuminant C to spectral support.
+
+*	Change printtarg last row padding to be media color
+	for both random and non-random layout.
+
+Version 1.1.0 RC2 (7th December 2009)
 -----------------
 
 *	Re-worked gamut mapping to improve saturation levels
@@ -22,13 +110,16 @@ Version 1.1.0 RC2 (1st December 2009)
 *	Added device power value for targen to allow
 	calibrating devices that have extreme non linearity.
 
+*	Fixed bug in targen when full spread patches were
+	mixed with other test patch types.
+
 *	Updated yajl library to latest version.
 
 *	Improved X11 XRandR CRTC detection 
 
 *   Added verbosity level to profcheck to match invprofcheck.
 
-*   Clarified licencing of various files (GPLv2+ files, reference
+*   Clarified licensing of various files (GPLv2+ files, reference
 	files and documentation).
 
 Version 1.1.0 RC1 (6 November 2009)

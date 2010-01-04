@@ -577,6 +577,7 @@ ipatch *val) {		/* Pointer to instrument patch value */
 		val->sp.spec_n = 31;
 		val->sp.spec_wl_short = 400.0;
 		val->sp.spec_wl_long = 700.0;
+		val->sp.norm = 100.0;
 	}
 
 	if (user_trig)

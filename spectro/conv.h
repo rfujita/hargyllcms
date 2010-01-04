@@ -90,6 +90,8 @@ struct _athread {
 	void *context;
 
     /* Kill the thread and delete the object */
+	/* (Killing it may have side effects, so this is a last */
+	/*  resort if the thread hasn't exited) */
     void (*del)(struct _athread *p);
 
 }; typedef struct _athread athread;

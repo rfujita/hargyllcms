@@ -883,9 +883,8 @@ spyd2_GetReading_ll(
 				if (transcnt < _mintcnt)
 					_mintcnt = transcnt;
 			}
-#ifdef DEBUG
-			printf("%d: initial senv %f from transcnt %d and intclls %d\n",k,sensv[k],transcnt,intclks);
-#endif
+			if (p->debug >= 4)
+				printf("%d: initial senv %f from transcnt %d and intclls %d\n",k,sensv[k],transcnt,intclks);
 
 #ifdef NEVER	/* This seems to make repeatability worse ??? */
 			/* If CRT and bright enough */
@@ -946,9 +945,8 @@ spyd2_GetReading_ll(
 				if (transcnt < _mintcnt)
 					_mintcnt = transcnt;
 			}
-#ifdef DEBUG
-			printf("%d: initial senv %f from transcnt %d and intclls %d\n",k,sensv[k],transcnt,intclks);
-#endif
+			if (p->debug >= 4)
+				printf("%d: initial senv %f from transcnt %d and intclls %d\n",k,sensv[k],transcnt,intclks);
 		}
 	}
 
@@ -1513,8 +1511,11 @@ spyd2_GetReading(
 
 	table = p->lcd;
 	if (p->itype == instSpyder3)
-		table = 0;							/* Always use 2nd table for Spyder 3 */
-											/* (First table is not noticably different) */
+		table = 1;							/* Always use 2nd table for Spyder 3 */
+											/* (First table is not noticably different */
+											/*  but can have scaled values.) */
+	if (p->debug >= 4)
+		printf("Using cal table %d\n",table);
 
 	for (k = 0; k < 8; k++) 	/* Zero weighted average */
 		a_sensv[k] = a_w[k] = 0.0;
@@ -1578,9 +1579,9 @@ spyd2_GetReading(
 
 	/* Convert sensor readings to XYZ value */
 	for (j = 0; j < 3; j++) {
-		XYZ[j] = p->cal_A[p->lcd][j][0];		/* First entry is a constant */
+		XYZ[j] = p->cal_A[table][j][0];		/* First entry is a constant */
 		for (k = 1; k < 8; k++)
-			XYZ[j] += a_sensv[k] * p->cal_A[p->lcd][j][k+1];
+			XYZ[j] += a_sensv[k] * p->cal_A[table][j][k+1];
 	}
 
 //printf("~1 real Y = %f\n",XYZ[1]);
@@ -1735,10 +1736,13 @@ spyd2_read_all_regs(
 	if ((ev = spyd2_rd_ee_ushort(p, &p->hwver, 5)) != inst_ok)
 		return ev;
 
+	if (p->debug >= 4) printf("hwver = 0x%x\n",p->hwver);
+
 	/* Serial number */
 	if ((ev = spyd2_readEEProm(p, (unsigned char *)p->serno, 8, 8)) != inst_ok)
 		return ev;
 	p->serno[8] = '\000';
+	if (p->debug >= 4) printf("serno = '%s'\n",p->serno);
 
 	/* Spyde2: CRT calibration values */
 	/* Spyde3: Unknown calibration values */
@@ -1749,18 +1753,32 @@ spyd2_read_all_regs(
 	                                                                            != inst_ok)
 		return ev;
 
-#ifndef NEVER
-	/* Hmm. The 0 table seems to be scaled ? */
+	/* Hmm. The 0 table seems to sometimes be scaled. Is this a bug ? */
+	/* The spyder 3 doesn't use this anyway. */
 	if (p->itype == instSpyder3) {
-		int j, k;
+		int j, k, i;
+		double avgmag = 0.0;
 	
-		for (j = 0; j < 3; j++) {
+		for (i = j = 0; j < 3; j++) {
 			for (k = 0; k < 9; k++) {
-				p->cal_A[0][j][k] *= 16.0;
+				if (p->cal_A[0][j][k] != 0.0) {
+					avgmag += fabs(p->cal_A[0][j][k]);
+					i++;
+				}
+			}
+		}
+		avgmag /= (double)(i);
+		if (p->debug >= 4) printf("Cal_A avgmag = %f\n",avgmag);
+
+		if (avgmag < 0.05) {
+			if (p->debug >= 4) printf("Scaling Cal_A by 16\n");
+			for (j = 0; j < 3; j++) {
+				for (k = 0; k < 9; k++) {
+					p->cal_A[0][j][k] *= 16.0;
+				}
 			}
 		}
 	}
-#endif
 
 	/* Spyder2: LCD calibration values */
 	/* Spyder3: Normal calibration values */
@@ -1787,34 +1805,32 @@ spyd2_read_all_regs(
 	if ((ev = spyd2_rdreg_float(p, &p->cal_F[6], 372)) != inst_ok)
 		return ev;
 
-#ifdef DEBUG
-	{
+	if (p->debug >= 4) {
 		int i, j, k;
 
 		
-		DBG(("Cal_A:\n"))
+		printf("Cal_A:\n");
 		for (i = 0; i < 2;i++) {
 			for (j = 0; j < 3; j++) {
 				for (k = 0; k < 9; k++) {
-					DBG(("Cal_A [%d][%d][%d] = %f\n",i,j,k,p->cal_A[i][j][k]))
+					printf("Cal_A [%d][%d][%d] = %f\n",i,j,k,p->cal_A[i][j][k]);
 				}
 			}
 		}
-		DBG(("\nCal_B:\n"))
+		printf("\nCal_B:\n");
 		for (i = 0; i < 2;i++) {
 			for (j = 0; j < 3; j++) {
 				for (k = 0; k < 9; k++) {
-					DBG(("Cal_B [%d][%d][%d] = %f\n",i,j,k,p->cal_B[i][j][k]))
+					printf("Cal_B [%d][%d][%d] = %f\n",i,j,k,p->cal_B[i][j][k]);
 				}
 			}
 		}
-		DBG(("\nCal_F:\n"))
+		printf("\nCal_F:\n");
 		for (i = 0; i < 7;i++) {
-			DBG(("Cal_F [%d] = %f\n",i,p->cal_F[i]))
+			printf("Cal_F [%d] = %f\n",i,p->cal_F[i]);
 		}
-		DBG(("\n"))
+		printf("\n");
 	}
-#endif/* NEVER */
 
 	if (p->debug) fprintf(stderr,"spyd2: all EEProm read OK\n");
 

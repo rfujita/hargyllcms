@@ -56,22 +56,20 @@
 		functions.
  */
 
-#undef BDEB			/* ~~99 Blue problem debug */
-
 #undef DEBUG				/* Print B2A processing information */
 #undef DEBUG_ONE			/* Test a particular value */
 
 #define verbo stdout
 
-#define IMP_MONO			/* Turn on development code */
+#undef IMP_MONO					/* [Undef] Turn on development code */
 
-#define NO_B2A_PCS_CURVES		/* PCS curves seem to make B2A less accurate. Why ? */
+#define NO_B2A_PCS_CURVES		/* [Define] PCS curves seem to make B2A less accurate. Why ? */
 #define USE_CAM_CLIP_OPT		/* [Define] Clip out of gamut in CAM space rather than PCS */
-#define CAM_CLIPLOCUS       	/* When converting to CAM, clip to the spectrum locus first */
-#define USE_LEASTSQUARES_APROX	/* [Defined] Use least squares fitting approximation */
+#define USE_LEASTSQUARES_APROX	/* [Define] Use least squares fitting approximation */
 #undef USE_EXTRA_FITTING		/* [Undef] Turn on data point error compensation */
 #undef USE_2PASSSMTH			/* [Undef] Turn on Gaussian smoothing */
 #undef DISABLE_GAMUT_TAG		/* [Undef] To dispable gamut tag */
+#undef WARN_CLUT_CLIPPING		/* [Undef] Print warning if setting clut clips */
 
 #include <stdio.h>
 #include "numlib.h"
@@ -84,11 +82,6 @@
 #include "prof.h"
 #include "gamut.h"
 #include "gammap.h"
-
-#ifdef BDEB
-#include "cam02.h"
-#include "vrml.h"
-#endif /* BDEB */
 
 #ifndef MAX_CAL_ENT
 #define MAX_CAL_ENT 4096
@@ -148,40 +141,6 @@
 #undef DBG
 #define DBG(xxx) 
 #endif
-
-#ifdef BDEB
-vrml *wrl = NULL;
-#define DEBSZ 5
-double best[DEBSZ][4] = {
-					{ 0,0,0,1e38},
-					{ 0,0,0,1e38},
-					{ 0,0,0,1e38},
-					{ 0,0,0,1e38},
-//					{ 0,0,0,1e38},
-					{ 0,0,0,1e38}
-		};
-double col[DEBSZ][3] = {
-//		{ 1.0, 1.0, 1.0 },		// White
-//		{ 1.0, 0.0, 0.0 },		// Red
-//		{ 0.0, 1.0, 0.0 },		// Green
-//		{ 0.0, 0.0, 1.0 },		// Blue
-//		{ 0.0, 1.0, 1.0 },		// Cyan
-//		{ 1.0, 1.0, 0.0 },		// Yellow
-//		{ 1.0, 0.0, 1.0 },		// Magenta
-//		{ 0.5, 0.5, 0.5 },		// Grey
-
-		{ 0.5, 0.5, 0.5 },		// Grey
-		{ 0.0, 1.0, 0.0 },		// Green
-		{ 1.0, 0.0, 0.0 },		// Red
-		{ 1.0, 1.0, 1.0 },		// White
-		{ 1.0, 0.0, 1.0 },		// Magenta
-
-	};
-int ccol = 0;
-#define DBG(xxx) if (trace) printf xxx ;
-int trace = 0;
-#endif /* BDEB */
-
 
 /* ---------------------------------------- */
 
@@ -247,9 +206,11 @@ static void do_abstract(out_b2a_callback *p, double out[3], double in[3]) {
 /* Extra non-linearity applied to BtoA XYZ PCS */
 /* This distributes the LUT indexes more evenly in */
 /* perceptual space, greatly improving the B2A accuracy of XYZ LUT */
+/* Since typically XYZ doesn't use the full range of 0-2.0 allowed */
+/* for in the encoding, we scale the cLUT index values to use the 0-1.3 range */
 static void xyzcurve(double *out, double *in) {
 	int i;
-	double sc = 65535.0/32768.0;
+	double sc = 2.0/1.3 * 65535.0/32768.0;
 
 	/* Use an L* like curve, scaled to the maximum XYZ valu */
 	out[0] = in[0]/sc;
@@ -268,7 +229,7 @@ static void xyzcurve(double *out, double *in) {
 
 static void invxyzcurve(double *out, double *in) {
 	int i;
-	double sc = 65535.0/32768.0;
+	double sc = 2.0/1.3 * 65535.0/32768.0;
 
 	out[0] = in[0]/sc;
 	out[1] = in[1]/sc;
@@ -283,6 +244,19 @@ static void invxyzcurve(double *out, double *in) {
 	out[1] = out[1] * sc;
 	out[2] = out[2] * sc;
 }
+/* --------------------------------------------------------- */
+
+/* sRGB device gamma encoded value to linear value 0.0 .. 1.0 */
+static double gdv2dv(double iv) {
+	double ov;
+
+	if (iv < 0.04045)
+		ov = iv/12.92;
+	else
+		ov = pow((iv + 0.055)/1.055, 2.4);
+	return ov;
+}
+
 
 /* --------------------------------------------------------- */
 /* NOTE :- the assumption that each stage of the BtoA is a mirror */
@@ -336,73 +310,6 @@ void out_b2a_clut(void *cntx, double *out, double in[3]) {
 	in1[1] = in[1];		/* so take a copy.  */
 	in1[2] = in[2];
 
-#ifdef BDEB
-{
-//	double targ[DEBSZ][3] = {
-//                        { 27.0, 64.0, -107.0 },
-//	                      { 23.0, 59.0, -96.0 },
-//	                      { 20.0, 54.0, -89.0 },
-//	                      { 16.0, 48.0, -80.0 },
-//	                      { 12.0, 42.0, -69.0 },
-//	                      { 10.0, 38.0, -64.0 }
-//                       };
-	double targ[DEBSZ][3] = {
-                          { 0.0, -111.0,  39.0 },
-	                      { 0.0, -86.0,   19.0 },
-	                      { 0.0,  108.0,  33.0 },
-	                      { 0.0,   74.0,  42.0 },
-	                      { 0.0,   39.0,  33.0 }
-                         };
-	double tmp[3], tt;
-	int i;
-
-	for (i = 0; i < DEBSZ; i++) {
-		tmp[0] = targ[i][0], tmp[1] = targ[i][1], tmp[2] = targ[i][2];
-		if (p->noPCScurves == 0)
-			p->x->inv_output(p->x, tmp, tmp);
-		tt = icmLabDE(tmp, in1);
-		if (tt < best[i][3]) {
-			best[i][3] = tt;	
-			icmAry2Ary(best[i], in1);
-		}
-	}
-}
-{
-//	double targ[DEBSZ][3] = {
-//						{ 25.000000, 63.500000, -111.125000 },
-//						{ 25.000000, 63.500000, -95.250000 },
-//						{ 18.750000, 47.625000, -95.250000 },
-//						{ 18.750000, 47.625000, -79.375000 },
-//						{ 12.500000, 47.625000, -63.500000 },
-//                     };
-	double targ[DEBSZ][3] = {
-						{ 0.000000, -111.125000, 31.750000 },
-						{ 0.000000, -79.375000, 15.875000 },
-						{ 0.000000, 111.125000, 31.750000 },
-						{ 0.000000, 79.375000, 47.625000 },
-						{ 0.000000, 31.750000, 31.750000 }
-                      };
-	double t1;
-	int i;
-
-	trace = 0;
-	for (i = 0; i < DEBSZ; i++) {
-		if (icmLabDE(targ[i], in1) < 0.01) {
-			trace = 1;
-			ccol = i;
-		}
-	}
-	if (trace && wrl != NULL) {
-		double tmp[3];
-		/* Convert from PCS to CAM/Gamut mapping space */
-		if (p->ox != NULL)
-			p->ox->fwd_relpcs_outpcs(p->ox, p->pcsspace, tmp, in1);
-		wrl->add_col_vertex(wrl, tmp, col[ccol]);
-		printf("\n");
-	}
-}
-#endif /* BDEB */
-
 	DBG(("out_b2a_clut got       PCS' %f %f %f\n",in[0],in[1],in[2]))
 
 	if (p->pcsspace == icSigXYZData)		/* Undo effects of extra XYZ non-linearity curve */
@@ -435,23 +342,11 @@ void out_b2a_clut(void *cntx, double *out, double in[3]) {
 
 	/* Invert AtoB clut (PCS' to Dev') Colorimetric */
 	/* to producte the colorimetric tables output. */
+	/* (Note that any aux target if we were using one, would be in Dev space) */
 	if (p->x->inv_clut(p->x, out, in1) > 1)
 		error("%d, %s",p->x->pp->errc,p->x->pp->err);
 
 	DBG(("convert PCS' to DEV' got    %f %f %f %f\n",out[0],out[1],out[2],out[3]))
-
-#ifdef BDEB
-#ifdef PLOT_COLORIMERIC
-	if (trace) {
-		double tmp[3];
-		p->x->clut(p->x, tmp, out);		/* Convert back to PCS */
-		/* Convert from PCS to CAM/Gamut mapping space */
-		if (p->ox != NULL)
-			p->ox->fwd_relpcs_outpcs(p->ox, p->pcsspace, tmp, tmp);
-		wrl->add_col_vertex(wrl, tmp, col[ccol]);
-	}
-#endif
-#endif /* BDEB */
 
 	if (p->ntables > 1) {		/* Do first part once for both intents */
 
@@ -517,26 +412,8 @@ void out_b2a_clut(void *cntx, double *out, double in[3]) {
 				DBG(("sat gamut map got %f %f %f\n",in2[0],in2[1],in2[2]))
 			}
 
-#ifdef BDEB
-#ifndef PLOT_PERCEPTUAL_SAT
-			if (trace && tn == 2) {	/* Way point */
-				wrl->add_col_vertex(wrl, in2, col[ccol]);
-			}
-#endif
-#endif /* BDEB */
-
 			/* Convert from Gamut maping/CAM space to PCS */
-#ifdef BDEB
-if (p->ox != NULL && p->ox->cam != NULL)
-	((cam02 *)p->ox->cam->p)->trace = trace;
-#endif /* BDEB */
-
 			p->ox->bwd_outpcs_relpcs(p->ox, p->pcsspace, in2, in2);
-
-#ifdef BDEB
-if (p->ox != NULL && p->ox->cam != NULL)
-	((cam02 *)p->ox->cam->p)->trace = 0;
-#endif /* BDEB */
 
 			DBG(("convert CAM to PCS got %f %f %f\n",in2[0],in2[1],in2[2]))
 
@@ -550,22 +427,10 @@ if (p->ox != NULL && p->ox->cam != NULL)
 
 			/* Invert AtoB clut (PCS' to Dev') */
 			/* to producte the perceptual or saturation tables output. */
+			/* (Note that any aux target if we were using one, would be in Dev space) */
 			if (p->x->inv_clut(p->x, out, in2) > 1)
 				error("%d, %s",p->x->pp->errc,p->x->pp->err);
 			DBG(("convert PCS' to DEV' got %f %f %f %f\n",out[0],out[1],out[2],out[3]))
-#ifdef BDEB
-#ifndef PLOT_PERCEPTUAL_SAT
-			if (trace && tn == 2) {
-				double tmp[3];
-				p->x->clut(p->x, tmp, out);		/* Convert back to PCS */
-				/* Convert from PCS to CAM/Gamut mapping space */
-				if (p->ox != NULL)
-					p->ox->fwd_relpcs_outpcs(p->ox, p->pcsspace, tmp, tmp);
-				wrl->add_col_vertex(wrl, tmp, col[ccol]);
-			}
-#endif
-#endif /* BDEB */
-
 		}
 	}
 
@@ -714,6 +579,7 @@ static double xyzoptfunc(void *cntx, double *v) {
 void
 make_output_icc(
 	prof_atype ptype,		/* Profile algorithm type */
+	int mtxtoo,				/* NZ if matrix tags should be created for Display XYZ cLUT */
 	icmICCVersion iccver,	/* ICC profile version to create */
 	int verb,				/* Vebosity level, 0 = none */
 	int iquality,			/* A2B table quality, 0..3 */
@@ -1066,7 +932,7 @@ make_output_icc(
 	    	wh->pcs         = icSigLabData;
 		else
     		wh->pcs         = icSigXYZData;				/* Must be XYZ for matrix based profile */
-    	wh->renderingIntent = icRelativeColorimetric;	/* For want of something */
+    	wh->renderingIntent = icRelativeColorimetric;	/* Should let user set this!!! */
 
 		/* Values that should be set before writing */
 		if (xpi != NULL && xpi->manufacturer != 0L)
@@ -1075,7 +941,7 @@ make_output_icc(
 			wh->manufacturer = str2tag("????");
 
 		if (xpi != NULL && xpi->model != 0L)
-			wh->model = xpi->model;
+			wh->model        = xpi->model;
 		else
 	    	wh->model        = str2tag("????");
 
@@ -1092,6 +958,13 @@ make_output_icc(
 #if defined(UNIX) && !defined(__APPLE__)
 		wh->platform = icmSig_nix;
 #endif
+	}
+
+	/* mtxtoo only applies to Display cLUT profiles */
+	if (!isLut
+		|| wr_icco->header->deviceClass != icSigDisplayClass
+	    || wr_icco->header->pcs != icSigXYZData) {
+		mtxtoo = 0;
 	}
 
 	/* Set the version of ICC profile we want */
@@ -1411,8 +1284,12 @@ make_output_icc(
 				wo->allocate((icmBase *)wo);/* Allocate space */
 			}
 		}
+	}
 
-	} else {	/* shaper + matrix type */
+	/* shaper + matrix type tags */
+	if (!isLut
+	|| (   wr_icco->header->deviceClass == icSigDisplayClass
+	    && wr_icco->header->pcs == icSigXYZData)) {
 
 		/* Red, Green and Blue Colorant Tags: */
 		{
@@ -1432,11 +1309,15 @@ make_output_icc(
 			wog->allocate((icmBase *)wog);
 			wob->allocate((icmBase *)wob);
 
-			/* Setup some sane dummy values */
-			/* icxMatrix will override these later */
 			wor->data[0].X = 1.0; wor->data[0].Y = 0.0; wor->data[0].Z = 0.0;
 			wog->data[0].X = 0.0; wog->data[0].Y = 1.0; wog->data[0].Z = 0.0;
 			wob->data[0].X = 0.0; wob->data[0].Y = 0.0; wob->data[0].Z = 1.0;
+
+			/* Setup deliberately wrong dummy values (red and green swapped). */
+			/* icxMatrix may override override these later */
+			wor->data[0].X = 0.385147; wor->data[0].Y = 0.716873; wor->data[0].Z = 0.097076;
+			wog->data[0].X = 0.436066; wog->data[0].Y = 0.222488; wog->data[0].Z = 0.013916;
+			wob->data[0].X = 0.143066; wob->data[0].Y = 0.060608; wob->data[0].Z = 0.714096;
 		}
 
 		/* Red, Green and Blue Tone Reproduction Curve Tags: */
@@ -1463,7 +1344,8 @@ make_output_icc(
 					error("add_tag failed: %d, %s",rv,wr_icco->err);
 			}
 	
-			if (ptype == prof_shamat || ptype == prof_sha1mat) {	/* Shaper */
+			/* Shaper */
+			if (ptype == prof_shamat || ptype == prof_sha1mat || ptype == prof_clutXYZ) {
 				wor->flag = wog->flag = wob->flag = icmCurveSpec; 
 				wor->size = wog->size = wob->size = 256;			/* Number of entries */
 			} else {						/* Gamma */
@@ -1474,7 +1356,14 @@ make_output_icc(
 			wog->allocate((icmBase *)wog);
 			wob->allocate((icmBase *)wob);
 
-			/* icxMatrix will set curve values */
+			/* Setup a default sRGB like curve. */
+			/* icxMatrix will may override curve values later */
+			for (i = 0; i < wor->size; i++) {
+				wor->data[i] = 
+				wog->data[i] = 
+				wob->data[i] = gdv2dv(i/(wor->size-1.0));
+			}
+
 		}
 	}
 	/* .ti3 Sample data use to create profile, plus any calibration curves: */
@@ -1992,10 +1881,6 @@ make_output_icc(
 				warning("!!!! USE_CAM_CLIP_OPT in profout.c is off !!!!");
 #endif
 
-#ifdef CAM_CLIPLOCUS
-				flags |= ICX_CAM_LOCUSCLIP;
-#endif
-
 				if ((AtoB = wr_xicc->get_luobj(wr_xicc, flags, icmFwd,
 				                  !allintents ? icmDefaultIntent : icRelativeColorimetric,
 				                  wantLab ? icSigLabData : icSigXYZData,
@@ -2063,13 +1948,6 @@ make_output_icc(
 				           wr_icco, icSigBToA0Tag)) == NULL) 
 					error("read_tag failed: %d, %s",wr_icco->errc,wr_icco->err);
 				cx.ntables = 1;
-
-#ifdef BDEB
-{
-wrl = new_vrml("profout.wrl", 1);
-wrl->start_line_set(wrl);
-}
-#endif /* BDEB */
 
 			} else {		/* All 3 intent tables */
 				/* Intent 1 = relative colorimetric */
@@ -2176,9 +2054,6 @@ wrl->start_line_set(wrl);
 					printf("~1 input space inking =\n"); xicc_dump_inking(&iink);
 #endif
 					if ((cx.ixp = src_xicc->get_luobj(src_xicc,ICX_CLIP_NEAREST
-#ifdef CAM_CLIPLOCUS
-					       | ICX_CAM_LOCUSCLIP
-#endif
 					       , icmFwd, intentp, icSigLabData, icmLuOrdNorm, &ivc, &iink)) == NULL)
 						error ("%d, %s",src_xicc->errc, src_xicc->err);
 
@@ -2195,9 +2070,6 @@ wrl->start_line_set(wrl);
 						/* Note that the intent=Appearance will trigger Jab CAM, */
 						/* overriding icSigLabData.. */
 						if ((ixs = src_xicc->get_luobj(src_xicc, ICX_CLIP_NEAREST
-#ifdef CAM_CLIPLOCUS
-					       | ICX_CAM_LOCUSCLIP
-#endif
 						   , icmFwd, intents, icSigLabData, icmLuOrdNorm, &ivc, &iink)) == NULL)
 						error ("%d, %s",src_xicc->errc, src_xicc->err);
 
@@ -2238,9 +2110,6 @@ wrl->start_line_set(wrl);
 					/* Note that the intent=Appearance will trigger Jab CAM, */
 					/* overriding icSigLabData.. */
 					if ((cx.ox = wr_xicc->get_luobj(wr_xicc, ICX_CLIP_NEAREST
-#ifdef CAM_CLIPLOCUS
-					       | ICX_CAM_LOCUSCLIP
-#endif
 						   , icmFwd, intento,
 					                  icSigLabData, icmLuOrdNorm, &ovc, oink)) == NULL)
 						error ("%d, %s",wr_xicc->errc, wr_xicc->err);
@@ -2254,15 +2123,6 @@ wrl->start_line_set(wrl);
 			
 					if (verb)
 						printf(" Creating Gamut match\n");
-#ifdef BDEB
-{
-double cc[3] = { -1.0, 0.7, 0.7 };
-wrl = new_vrml("profout.wrl", 1);
-/* gamut surface in gamut mapping/CAM space */
-wrl->make_gamut_surface(wrl, ogam, 0.2, cc);
-wrl->start_line_set(wrl);
-}
-#endif /* BDEB */
 
 					/* The real range of Lab 0..100,-128..128,1-28..128 cube */
 					/* when mapped to CAM is ridiculously large (ie. */
@@ -2309,13 +2169,6 @@ wrl->start_line_set(wrl);
 					}
 					ogam->del(ogam);
 					ogam = NULL;
-				} else {
-#ifdef BDEB
-{
-wrl = new_vrml("profout.wrl", 1);
-wrl->start_line_set(wrl);
-}
-#endif /* BDEB */
 				}
 			}
 			cx.ochan = wo[0]->outputChan;
@@ -2592,27 +2445,15 @@ wrl->start_line_set(wrl);
 			if (cx.verb) {
 				printf("\n");
 			}
+
+#ifdef WARN_CLUT_CLIPPING	/* Print warning if setting clut clips */
 			/* Ignore clipping of the input table, because this happens */
 			/* anyway due to Lab symetry adjustment. */
 			if (wr_icco->warnc != 0 && wr_icco->warnc != 1) {
 				warning("Values clipped in setting B2A LUT!");
 			}
+#endif /* WARN_CLUT_CLIPPING */
 #endif /* !DEBUG_ONE */
-
-#ifdef BDEB
-{
-	int i;
-	for (i = 0; i < DEBSZ; i++) {
-		printf("~1 closest%d is %f, %f, %f\n",i+1,best[i][0],best[i][1],best[i][2]);
-	}
-	if (cx.ntables > 1)
-		wrl->make_lines(wrl, 3);		/* Percept/sat */
-	else
-		wrl->make_lines(wrl, 2);		/* Colorimetric */
-	wrl->del(wrl);
-	wrl = NULL;
-}
-#endif /* BDEB */
 
 			if (cx.abs_luo != NULL) {		/* Free up abstract transform */
 				cx.abs_luo->del(cx.abs_luo);
@@ -2731,8 +2572,10 @@ wrl->start_line_set(wrl);
 			if (cx.verb) {
 				printf("\n");
 			}
+#ifdef WARN_CLUT_CLIPPING	/* Print warning if setting clut clips */
 			if (wr_icco->warnc)
 				warning("Values clipped in setting Gamut LUT");
+#endif /* WARN_CLUT_CLIPPING */
 
 			cx.gam->del(cx.gam);		/* Done with gamut object */
 			cx.gam = NULL;
@@ -2746,7 +2589,10 @@ wrl->start_line_set(wrl);
 		AtoB->del(AtoB); /* Done with device to PCS lookup */
 		wr_xicc->del(wr_xicc);
 
-	} else {		/* Gamma/Shaper + matrix profile */
+	}
+	/* Gamma/Shaper + matrix profile */
+	/* or XYZ cLUT with matrix as well. */
+	if (!isLut || mtxtoo) {
 		xicc *wr_xicc;			/* extention object */
 		icxLuBase *xluo;		/* Forward ixcLu */
 		int flags = 0;
@@ -2758,11 +2604,14 @@ wrl->start_line_set(wrl);
 		if (verb)
 			flags |= ICX_VERBOSE;
 
+		if (!mtxtoo)	/* Write matrix white/black/Luminance if no cLUT */
+			flags |= ICX_WRITE_WBL;
+
 		/* Setup Device -> XYZ conversion (Fwd) object from scattered data. */
 		if ((xluo = wr_xicc->set_luobj(
 		               wr_xicc, icmFwd, isdisp ? icmDefaultIntent : icRelativeColorimetric,
-		               icmLuOrdNorm,
-		               flags | ICX_SET_WHITE | ICX_SET_BLACK, 		/* Flags */
+		               icmLuOrdRev,
+			           flags | ICX_SET_WHITE | ICX_SET_BLACK, 		/* Compute white & black */
 		               npat, tpat, dispLuminance, -1.0, smooth, avgdev,
 		               NULL, oink, cal, iquality)) == NULL)
 			error("%d, %s",wr_xicc->errc, wr_xicc->err);
@@ -2771,7 +2620,7 @@ wrl->start_line_set(wrl);
 		xluo->del(xluo);
 
 		/* Set the ColorantTable PCS values */
-		{
+		if (!mtxtoo) {
 			unsigned int i;
 			icmColorantTable *wo;
 			double dv[MAX_CHAN];

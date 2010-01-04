@@ -78,15 +78,25 @@ static int xcal_read_cgats(xcal *p, cgats *tcg, int table, char *filename) {
 	}
 
 	if ((ti = tcg->find_kword(tcg, table, "COLOR_REP")) < 0) {
-		sprintf(p->err, "Calibration file '%s'doesn't contain keyword COLOR_REP",filename);
-		return p->errc = 1;
+		/* Be backwards compatible with V1.0.4 display calibration files */
+		if (p->devclass != icSigDisplayClass) {
+			sprintf(p->err, "Calibration file '%s'doesn't contain keyword COLOR_REP",filename);
+			return p->errc = 1;
+		} 
+		warning("\n    *** Calibration file '%s'doesn't contain keyword COLOR_REP, assuming RGB ***",filename);
+		if ((p->devmask = icx_char2inkmask("RGB") ) == 0) {
+			sprintf(p->err, "Calibration file '%s' has unrecognized COLOR_REP '%s'",
+			                                          filename,tcg->t[table].kdata[ti]);
+			return p->errc = 1;
+		}
+	} else {
+		if ((p->devmask = icx_char2inkmask(tcg->t[table].kdata[ti]) ) == 0) {
+			sprintf(p->err, "Calibration file '%s' has unrecognized COLOR_REP '%s'",
+			                                          filename,tcg->t[table].kdata[ti]);
+			return p->errc = 1;
+		}
 	}
 
-	if ((p->devmask = icx_char2inkmask(tcg->t[table].kdata[ti]) ) == 0) {
-		sprintf(p->err, "Calibration file '%s' has unrecognized COLOR_REP '%s'",
-		                                          filename,tcg->t[table].kdata[ti]);
-		return p->errc = 1;
-	}
 	p->colspace = icx_colorant_comb_to_icc(p->devmask);	/* 0 if none */
 	p->devchan = icx_noofinks(p->devmask);
 	ident = icx_inkmask2char(p->devmask, 1); 

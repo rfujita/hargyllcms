@@ -40,7 +40,7 @@
 #include "xicc.h"
 #include "sort.h"
 
-#define LOCUS_CLIP		/* Clip to spectrum locus before CAM lookup */
+#undef NOCAMGAM_CLIP		/* No clip to CAM gamut before CAM lookup */
 
 void set_fminmax(double min[3], double max[3]);
 void reset_filter();
@@ -617,8 +617,8 @@ main(int argc, char *argv[]) {
 	
 		/* Get a expanded color conversion object */
 		if ((luo = xicco->get_luobj(xicco, ICX_CLIP_NEAREST
-#ifdef LOCUS_CLIP
-		             | ICX_CAM_LOCUSCLIP
+#ifdef NOCAMGAM_CLIP
+		             | ICX_CAM_NOGAMCLIP
 #endif
 		           , func, intent, pcsor, order, &vc, NULL)) == NULL)
 			error ("%d, %s",xicco->errc, xicco->err);
@@ -676,7 +676,8 @@ main(int argc, char *argv[]) {
 		if ((cam = new_icxcam(cam_default)) == NULL)
 			error("new_icxcam failed");
 
-		cam->set_view(cam, vc.Ev, vc.Wxyz, vc.La, vc.Yb, vc.Lv, vc.Yf, vc.Fxyz, XICC_USE_HK);
+		cam->set_view(cam, vc.Ev, vc.Wxyz, vc.La, vc.Yb, vc.Lv, vc.Yf, vc.Fxyz,
+		              XICC_USE_HK, XICC_NOCAMCL);
 	}
 
 	/* Establish the PCS range if we are filtering */
@@ -702,15 +703,9 @@ main(int argc, char *argv[]) {
 #ifdef NEVER	/* Does this make any sense ?? */
 			if (cam) {
 				icmLab2XYZ(&icmD50, pcsmin, pcsmin);
-#ifdef LOCUS_CLIP
-				icxClipToSpectrumLocus2(pcsmin, pcsmin);
-#endif
 				cam->XYZ_to_cam(cam, pcsmin, pcsmin);
 
 				icmLab2XYZ(&icmD50, pcsmax, pcsmax);
-#ifdef LOCUS_CLIP
-				icxClipToSpectrumLocus2(pcsmax, pcsmax);
-#endif
 				cam->XYZ_to_cam(cam, pcsmax, pcsmax);
 			}
 #endif
@@ -837,10 +832,6 @@ main(int argc, char *argv[]) {
 //printf("~1 Lab in value = %f %f %f\n",in[0],in[1],in[2]);
 					icmLab2XYZ(&icmD50, out, in);
 //printf("~1 XYZ = %f %f %f\n",out[0],out[1],out[2]);
-#ifdef LOCUS_CLIP
-					icxClipToSpectrumLocus2(out, out);
-//printf("~1 Clipped XYZ = %f %f %f\n",out[0],out[1],out[2]);
-#endif
 					cam->XYZ_to_cam(cam, out, out);
 //printf("~1 Jab = %f %f %f\n",out[0],out[1],out[2]);
 

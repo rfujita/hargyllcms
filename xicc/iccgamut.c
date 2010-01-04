@@ -24,7 +24,6 @@
 #define GAMRES 10.0		/* Default surface resolution */
 
 #define USE_CAM_CLIP_OPT		/* Use CAM space to clip in */
-#define USE_CAM_LOCUS_CLIP      /* Clip to spectrum locus before CAM lookup */
 
 #define RGBRES 33	/* 33 */
 #define CMYKRES 17	/* 17 */
@@ -386,6 +385,7 @@ main(int argc, char *argv[]) {
 	ink.KonlyLmin = 0;		/* Use normal black Lmin for locus */
 	ink.k_rule = icxKluma5k;
 	ink.c.Ksmth = ICXINKDEFSMTH;	/* Default smoothing */
+	ink.c.Kskew = ICXINKDEFSKEW;	/* default curve skew */
 	ink.c.Kstle = 0.0;		/* Min K at white end */
 	ink.c.Kstpo = 0.0;		/* Start of transition is at white */
 	ink.c.Kenle = 1.0;		/* Max K at black end */
@@ -436,9 +436,6 @@ main(int argc, char *argv[]) {
 
 #ifdef USE_CAM_CLIP_OPT
 	 fl |= ICX_CAM_CLIP;
-#endif
-#ifdef USE_CAM_LOCUS_CLIP
-	 fl |= ICX_CAM_LOCUSCLIP;
 #endif
 
 #ifdef NEVER

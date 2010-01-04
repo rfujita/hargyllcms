@@ -449,7 +449,7 @@ main(int argc, char *argv[])
 		if ((ii = icg->find_kword (icg, 0, "SPECTRAL_END_NM")) < 0)
 			error ("Input file doesn't contain keyword SPECTRAL_END_NM");
 		sp.spec_wl_long = atof (icg->t[0].kdata[ii]);
-		sp.norm = 100.0;
+		sp.norm = 100.0;		/* !!! This wouldn't be right for emsission !!! */
 
 		/* Find the fields for spectral values */
 		for (j = 0; j < sp.spec_n; j++) {

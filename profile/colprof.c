@@ -20,11 +20,15 @@
  * 
  * Preview profiles are not currently generated.
  * 
- * The gamut clut should be implemented with xicc/rspl
+ * The gamut cLUT should be implemented with xicc/rspl
  */
 
 /*
  * TTBD:
+ *		Should allow an option to build a display profile with both
+ *		an XYZ cLUT and a matrix, for systems that won't load a non-matrix
+ *		profile, yet have some software that can use the more accurate cLUT profile.
+ *
  *      Add Argyll private tag to record ink limit etc. to automate link parameters.
  *      Estimate ink limit from B2A tables if no private tag ?
  *      Add used option for black relative
@@ -93,9 +97,9 @@ void usage(char *diag, ...) {
 	fprintf(stderr," -K parameters   Same as -k, but target is K locus rather than K value itself\n");
 	fprintf(stderr," -l tlimit       override total ink limit, 0 - 400%% (default from .ti3)\n");
 	fprintf(stderr," -L klimit       override black ink limit, 0 - 100%% (default from .ti3)\n");
-	fprintf(stderr," -a lxgs         Algorithm type override\n");
-	fprintf(stderr,"                 l = Lab clut (def.), x = XYZ lut\n");
-	fprintf(stderr,"                 g = gamma+matrix, s = shaper+matrix\n");
+	fprintf(stderr," -a lxXgsGS      Algorithm type override\n");
+	fprintf(stderr,"                 l = Lab cLUT (def.), x = XYZ cLUT, X = display XYZ cLUT + matrix\n");
+	fprintf(stderr,"                 g = gamma+matrix, s = shaper+matrix,\n");
 	fprintf(stderr,"                 G = single gamma+matrix, S = single shaper+matrix\n");
 //  Development - not supported
 //	fprintf(stderr," -I ver          Set ICC profile version > 2.2.0\n");
@@ -190,6 +194,7 @@ int main(int argc, char *argv[]) {
 	cgats *icg;					/* input cgats structure */
 	int ti;						/* Temporary CGATs index */
 	prof_atype ptype = prof_default;	/* Default for each type of device */
+	int mtxtoo = 0;				/* NZ if matrix tags should be created for Display XYZ cLUT */
 	icmICCVersion iccver = icmVersionDefault;	/* ICC profile version to create */
 	profxinf xpi;		/* Extra profile information */
 
@@ -451,8 +456,10 @@ int main(int argc, char *argv[]) {
 					case 'L':
 						ptype = prof_clutLab;
 						break;
-					case 'x':
 					case 'X':
+						mtxtoo = 1;
+						/* Fall though */
+					case 'x':
 						ptype = prof_clutXYZ;
 						break;
 					case 'g':
@@ -817,6 +824,7 @@ int main(int argc, char *argv[]) {
 
 		ink.KonlyLmin = 0;				/* Use normal black Lmin for locus */
 		ink.c.Ksmth = ICXINKDEFSMTH;	/* default black curve smoothing */
+		ink.c.Kskew = ICXINKDEFSKEW;	/* default black curve skew */
 
 		if (inking == 0) {			/* Use minimum */
 			ink.k_rule = locus ? icxKluma5 : icxKluma5k;
@@ -858,10 +866,10 @@ int main(int argc, char *argv[]) {
 		if (ptype == prof_default)
 			ptype = prof_clutLab;
 		else if (ptype != prof_clutLab && ptype != prof_clutXYZ) {
-			error ("Output profile can only be a clut algorithm");
+			error ("Output profile can only be a cLUT algorithm");
 		}
 
-		make_output_icc(ptype, iccver, verb, iquality, oquality,
+		make_output_icc(ptype, 0, iccver, verb, iquality, oquality,
 		                noisluts, noipluts, nooluts, nocied, noptop, nostos,
 		                gamdiag, verify, &ink, inname, outname, icg, spec,
 		                illum, &cust_illum, observ, fwacomp, smooth, avgdev,
@@ -888,7 +896,7 @@ int main(int argc, char *argv[]) {
 			ptype = prof_clutLab;		/* ?? or should it default to prof_shamat ?? */
 
 		/* If a source gamut is provided for a Display, then a V2.4.0 profile will be created */
-		make_output_icc(ptype, iccver, verb, iquality, oquality,
+		make_output_icc(ptype, mtxtoo, iccver, verb, iquality, oquality,
 		                noisluts, noipluts, nooluts, nocied, noptop, nostos,
 		                gamdiag, verify, NULL, inname, outname, icg, spec,
 		                illum, &cust_illum, observ, 0, smooth, avgdev,

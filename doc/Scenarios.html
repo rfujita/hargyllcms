@@ -16,10 +16,13 @@ Apple OS X and Unix/Linux platforms, the <span
  style="font-weight: bold;">.icc</span> extension is expected and
 should be used.<br>
 <h4><a href="#PM1">Profiling Displays</a></h4>
-<h4>&nbsp;&nbsp;&nbsp; <a href="#PM1a">Adjusting and Calibrating
+<h4>&nbsp;&nbsp;&nbsp; <a href="#PM1a">Checking you can access your
+display<br>
+</a></h4>
+<h4>&nbsp;&nbsp;&nbsp; <a href="#PM1b">Adjusting and Calibrating
 a
 displays</a></h4>
-<h4>&nbsp;&nbsp;&nbsp; <a href="#PM1b">Adjusting, calibrating and
+<h4>&nbsp;&nbsp;&nbsp; <a href="#PM1c">Adjusting, calibrating and
 profiling in one step<br>
 </a><span style="font-weight: bold;"></span><span
  style="font-weight: bold;"></span><span
@@ -72,7 +75,7 @@ handled when calibration is being used<br>
 <h4><br>
 <a href="#TR1">Transforming colorspaces of raster files</a></h4>
 <br>
-<hr style="width: 100%; height: 2px;">
+<hr style="width: 100%; height: 2px;"><br>
 <h3><a name="PM1"></a>Profiling Displays</h3>
 Argyll supports adjusting, calibrating and profiling of displays using
 one of a number of
@@ -90,7 +93,30 @@ displayed, while taking measurements of the resulting colors using the
 instrument. Finally, the device value/measured color values need to be
 converted into an ICC profile.<br>
 <br>
-<h3><a name="PM1a"></a>Adjusting and Calibrating Displays</h3>
+<h3><a name="PM1a"></a>Checking you can access your display<br>
+</h3>
+You might first want to check that you are accessing and can calibrate
+your display. You can do this using the <a href="dispwin.html">dispwin</a><span
+ style="font-weight: bold;"></span> utility<span
+ style="font-weight: bold;">.</span> If you just run <span
+ style="font-weight: bold;">dispwin</span>
+it will create a test window and run through a series of test colors
+before checking that the VideoLUT can be accessed by the display. If
+you invoke the usage for <span style="font-weight: bold;">dispwin</span>
+(by giving it an unrecognized option, e.g. <span
+ style="font-weight: bold;">-?</span>) then it will show a list of
+available displays next to the <span style="font-weight: bold;"><span
+ style="font-weight: bold;">-d</span></span>
+flag. Make sure that you are accessing the display you intend to
+calibrate and profile, and that the VideoLUT is effective (the <span
+ style="font-weight: bold;">-r</span> flag can be used to just run the
+VideoLUT test). You can also try clearing the VideoLUTs using the <span
+ style="font-weight: bold;">-c</span> flag, and loading a deliberately
+strange looking calibration <span style="font-weight: bold;">strange.cal</span>
+that is provided in the Argyll <span style="font-weight: bold;">ref</span>
+directory.<br>
+<br>
+<h3><a name="PM1b"></a>Adjusting and Calibrating Displays</h3>
 Please read <a href="calvschar.html">What's the difference between
 Calibration and Characterization ?</a> if you are unclear as to the
 difference .<br>
@@ -184,7 +210,7 @@ adjusted and calibrated your display, you can move on to the next step.<br>
 When you have calibrated and profiled your display, you can keep it
 calibrated using the <a href="dispcal.html#u">dispcal -u</a> option.<br>
 <br>
-<h4><a name="PM1b"></a>Adjusting, calibrating and profiling in one step.</h4>
+<h4><a name="PM1c"></a>Adjusting, calibrating and profiling in one step.</h4>
 If a simple matrix/shaper display profile is all
 that is desired, <span style="font-weight: bold;">dispcal</span> can
 be used to do this, permitting display adjustment, calibration and
@@ -428,8 +454,9 @@ is probably not ideal for creating profiles:<br>
 <img alt="ColorChecker 24 patch" src="colorchecker.jpg"
  style="width: 112px; height: 78px;"><br>
 <br>
-Other popular charts are the GretagMacbeth ColorChecker DC and
-ColorChecker SG charts:<br>
+Other popular charts are the X-Rite/GretagMacbeth ColorChecker DC and
+<a href="http://www.xrite.com/product_overview.aspx?ID=938">ColorChecker
+SG</a> charts:<br>
 <br>
 <img src="DC.jpg" alt="GretagMacbeth ColorChecker DC chart" height="122"
  width="200"> <img alt="ColorChecker SG" src="SG.jpg"
@@ -492,8 +519,10 @@ needs to
 be given a template <a href="File_Formats.html#.cht">.cht</a> file
 that describes the features of the chart, and
 how
-the test patches are labelled. Also needed is a file containing the CIE
-values for each of the patches in the chart.<br>
+the test patches are labeled. Also needed is a file containing the CIE
+values for each of the patches in the chart, which is typically
+supplied with the chart, available from the manufacturers web site, or
+has been measured using a spectrometer.<br>
 <br>
 <div style="margin-left: 40px;">For an IT8.7/2 chart, this is the <span
  style="font-weight: bold;">ref/</span><b>it8.cht</b>
@@ -520,11 +549,24 @@ For the ColorChecker DC chart, the
 should be used, and there will be a ColorCheckerDC reference
 file supplied by X-Rite/GretagMacbeth with the chart.<br>
 <br>
-For the ColorCheckerSG chart, the <span style="font-weight: bold;"><span
- style="font-weight: bold;">ref/</span>ColorCheckerSG.cht</span> file
-should be used, and there will be a <span style="font-weight: bold;">ColorCheckerSG.txt</span>
-supplied with the chart that contains the spectral reference
-information. To convert this to a <span style="font-weight: bold;">ColorCheckerSG.cie</span>
+The ColorChecker SG is relatively expensive, but is preferred by many
+people because its colors are composed of multiple different pigments,
+giving it reflective spectra that are more representative of the real
+world, unlike many other charts that are created out of combination of
+3 or 4 colorants.<br>
+<span style="text-decoration: underline;">I don't recommend</span>
+buying the ColorChecker SG chart at the present time, since the
+manufacturer doesn't
+provide any CIE reference information for it, making it relatively
+useless for creating profiles unless you are using X-Rite software to
+do so. [There was a suggestion in December 2009 That X-Rite will
+address this problem by making the reference information available on
+their Website, but at the time of writing, this hasn't happened yet.]<br>
+If you do happen to have access to the ColorChecker SG reference
+information, or you have measured it yourself using a color instrument,<br>
+then you may need to convert the reference information from spectral <span
+ style="font-weight: bold;">ColorCheckerSG.txt</span> file to CIE value
+<span style="font-weight: bold;">ColorCheckerSG.cie</span>
 reference file,
 follow the following steps:<br>
 &nbsp;&nbsp;&nbsp;&nbsp; <a href="logo2cgats.html">logo2cgats</a>
@@ -1088,7 +1130,7 @@ retains its neutral appearance irrespective of printer behavior or the
 spectrum of the illuminant used to view the print. On the other hand,
 output which is dominantly from one of the color channels will tend to
 emphasize the screening pattern and any unevenness (banding etc.) of
-that channel, and the black channel in particular is has the highest
+that channel, and the black channel in particular has the highest
 visibility. So in practice, some balance between the levels of the four
 channels is probably best, with more K if the screening is fine and a
 robust neutral balance is important, or less K if the screening is more
@@ -1120,24 +1162,30 @@ preliminary profile called <span style="font-weight: bold;">PrinterBt</span>:<br
 copy PrinterB.ti3 PrinterBt.ti3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (Use "cp"
 on Linux or OSX of course.)<br>
 <a href="colprof.html">colprof</a> <a href="colprof.html#v">-v</a> <a
- href="colprof.html#q">-ql</a>
-<a href="colprof.html#b">-b</a> <a href="colprof.html#ni">-no</a> <a
- href="colprof.html#no">-ni</a>
+ href="colprof.html#q">-qm</a>
+<a href="colprof.html#b">-b</a> <a href="colprof.html#c">-cmt</a>
+<a href="colprof.html#d">-dpp</a>
 <a href="colprof.html#p1">PrinterBt</a><br>
 <br>
-Then see what the minimum black level down the neutral axis can be:<br>
+Then see what the minimum black level down the neutral axis can be.
+Note that we need to also set any ink limits we've decided on as well
+(coloprof defaulting to 10% less than the value recorded in the .ti3
+file). In this example the test chart has a 300% total ink limit, and
+we've decided to use 290%:<br>
 <br>
 <a href="xicclu.html">xicclu</a> <a href="xicclu.html#g">-g</a> <a
- href="xicclu.html#k">-kz</a> <a href="xicclu.html#f">-fif</a> <a
- href="xicclu.html#i">-ir</a> <a href="xicclu.html#p1">PrinterBt.icm</a><br>
+ href="xicclu.html#k">-kz</a> <a href="xicclu.html#l">-l290</a> <a
+ href="xicclu.html#f">-fif</a> <a href="xicclu.html#i">-ir</a> <a
+ href="xicclu.html#p1">PrinterBt.icm</a><br>
 <br>
 Which might be a graph something like this:<br>
 <br>
 <img alt="Graph of CMYK neutral axis with minimum K" src="Kgraph1.jpg"
  style="width: 250px; height: 250px;"><br>
 <br>
-Note&nbsp; how the minimum black is zero up to about L* value 20 (= 80%
-of the curve), and then jumps up to 70%. This is because we've reached
+Note&nbsp; how the minimum black is zero up to 93% of the
+white-&gt;black L* curve, and then jumps up to 87%. This is because
+we've reached
 the total ink limit, and K then has to be substituted for CMY, to keep
 the total under the total ink limit.<br>
 <br>
@@ -1145,8 +1193,8 @@ Then let's see what the maximum black level down the neutral axis can
 be:<br>
 <br>
 <a href="xicclu.html">xicclu</a> <a href="xicclu.html#g">-g</a> <a
- href="xicclu.html#k">-kx</a> <a href="xicclu.html#f">-fif</a> <a
- href="xicclu.html#i">-ir</a><a href="xicclu.html#l"></a> <a
+ href="xicclu.html#k">-kx</a> <a href="xicclu.html#l">-l290</a> <a
+ href="xicclu.html#f">-fif</a> <a href="xicclu.html#i">-ir</a> <a
  href="xicclu.html#p1">PrinterBt.icm</a><br>
 <br>
 Which might be a graph something like this:<br>
@@ -1154,8 +1202,10 @@ Which might be a graph something like this:<br>
 <img alt="Graph of CMYK neutral axis with maximum K" src="Kgraph2.jpg"
  style="width: 250px; height: 250px;"><br>
 <br>
-Note how the CMY values are fairly low up to an L* value of about 15
-(the low levels are setting the neutral color), and then they jump up.
+Note how the CMY values are fairly low up to 93% of the white-&gt;black
+L* curve
+(the low levels of CMY are helping set the neutral color), and then
+they jump up.
 This is because we've reach the point where black on it's own, isn't as
 dark as the color that can be achieved using CMY and K. Because the K
 has a dominant effect on the hue of the black, the levels of CMY are
@@ -1170,51 +1220,101 @@ smooth, since this will minimize visual artefacts caused by the limited
 fidelity that profile LUT tables are able to represent inside the
 profile.<br>
 <br>
-We need our curve to at least reach 70% at an L* value of 20 (80% of
-the curve.) Lets also start at 0 at L* == 100 (0% of the curve).<br>
+<img style="width: 340px; height: 258px;" alt="-k parameters"
+ src="Kparams.jpg"><br>
 <br>
-So for a first try:<br>
+<br>
+Let's say we'd like to chose a moderate black curve, one that aims for
+about equal levels of CMY and K. We should also aim for it to be fairly
+smooth, since this will minimize visual artefacts caused by the limited
+fidelity that profile LUT tables are able to represent inside the
+profile. For minimum discontinuities we should aim for the curve to
+finish at the point it has to reach to satisfy the total ink limit at
+88% curve and 90% black.<br>
+<br>
+For a first try simply try a straight line between 0 and 100%K and 100%
+input:<br>
 <br>
 <a href="xicclu.html">xicclu</a> <a href="xicclu.html#g">-g</a> <a
- href="xicclu.html#k">-kp 0 0 .8 .7 1</a> <a href="xicclu.html#f">-fif</a>
+ href="xicclu.html#k">-kp 0 0 .93 .87 1.0</a> <a href="xicclu.html#l">-l290</a>
+<a href="xicclu.html#f">-fif</a>
 <a href="xicclu.html#i">-ir</a> <a href="xicclu.html#p1">PrinterBt.icm</a><br>
 <br>
-<img alt="Graph of CMYK neutral axis with -kp 0 0 .8 .7 1"
+<img alt="Graph of CMYK neutral axis with kp 0 0 1.0 1.0 1.0 -l290"
  src="Kgraph3.jpg" style="width: 250px; height: 250px;"><br>
 <br>
-We've matched the curve at 80% quite well, but the transition isn't
-very smooth, and the black level is higher than the CMY for most of the
-curve. Let's try making the black curve somewhat concave, and also
-adjust the other parameters slightly:<br>
+The black "curve" hits the 93%/87% mark well, but is a bit too far
+above CMY, so we'll try making the black curve concave:<br>
 <br>
 <a href="xicclu.html">xicclu</a> <a href="xicclu.html#g">-g</a> <a
- href="xicclu.html#k">-kp 0 0 .83 .75 .5</a> <a href="xicclu.html#f">-fif</a>
+ href="xicclu.html#k">-kp </a><a href="xicclu.html#k">0 0 .93 .87 0.65</a>
+<a href="xicclu.html#l">-l290</a>
+<a href="xicclu.html#f">-fif</a>
 <a href="xicclu.html#i">-ir</a> <a href="xicclu.html#p1">PrinterBt.icm</a><br>
 <br>
-<img alt="Graph of CMYK neutral axis with -kp 0 0 .83 .75 .5"
- src="Kgraph4.jpg" style="width: 250px; height: 250px;"><br>
+<img alt="Graph of CMYK neutral axis with -kp 0 .05 1 .9 1 -l290"
+ src="Kgraph4.jpg" style="width: 250px; height: 249px;"><br>
 <br>
-This is looking pretty good now, but the L* = 100 point has the black
-curving up rather suddenly at the start. Lets adjust the black curve so
-the black will only start coming in at the 10% mark:<br>
-<br>
-<a href="xicclu.html">xicclu</a> <a href="xicclu.html#g">-g</a> <a
- href="xicclu.html#k">-kp 0 .1 .83 .83 .6</a> <a href="xicclu.html#f">-fif</a>
-<a href="xicclu.html#i">-ir</a> <a href="xicclu.html#p1">PrinterBt.icm</a><br>
-<br>
-<img alt="Graph of CMYK neutral axis with -kp 0 .1 .83 .83 .6"
- src="Kgraph5.jpg" style="width: 250px; height: 250px;"><br>
-<br>
-<br>
-The curve parameters can now be used to generate our real profile:<br>
+This looks just about perfect, so the the curve parameters can now be
+used to generate our real profile:<br>
 <br>
 <a href="colprof.html">colprof</a> <a href="colprof.html#v">-v</a> <a
  href="colprof.html#E">-D"Printer B"</a> <a href="colprof.html#q">-qm</a>
-<a href="colprof.html#k">-kp 0 .1 .83 .83 .6</a>
-<a href="colprof.html#S">-S</a><a href="colprof.html#S"> sRGB.icm</a> <a
- href="colprof.html#c">-cmt</a> <a href="colprof.html#d">-dpp</a>
+<a href="colprof.html#k">-kp </a><a href="xicclu.html#k">0 0 .93 .87
+0.65</a> <a href="colprof.html#S">-S</a><a href="colprof.html#S">
+sRGB.icm</a> <a href="colprof.html#c">-cmt</a>
+<a href="colprof.html#d">-dpp</a>
 <a href="colprof.html#p1">PrinterB</a><br>
 <br>
+and the resulting B2A table black curve can be checked using xicclu:<br>
+<br>
+<a href="xicclu.html">xicclu</a> <a href="xicclu.html#g">-g</a> <a
+ href="xicclu.html#f">-fb</a>
+<a href="xicclu.html#i">-ir</a> <a href="xicclu.html#p1">PrinterB.icm</a><br>
+<br>
+<img style="width: 250px; height: 250px;" alt="sadsadas"
+ src="Kgraph5.jpg"><br>
+<br>
+<br>
+<hr
+ style="margin-left: 0px; margin-right: auto; width: 20%; height: 2px;"><br>
+<span style="font-weight: bold;">Examples of other inkings:<br>
+<br>
+</span>A smoothed zero black inking:<br>
+<br>
+<a href="xicclu.html">xicclu</a> <a href="xicclu.html#g">-g</a> <a
+ href="xicclu.html#k">-kp </a><a href="xicclu.html#k">0 .7 .93 .87 1.0</a>
+<a href="xicclu.html#l">-l290</a>
+<a href="xicclu.html#f">-fif</a>
+<a href="xicclu.html#i">-ir</a> <a href="xicclu.html#p1">PrinterBt.icm</a><br>
+<br>
+<img style="width: 250px; height: 250px;" alt="sadsadas"
+ src="Kgraph6.jpg"><br>
+<br>
+A low black inking:<br>
+<br>
+<a href="xicclu.html">xicclu</a> <a href="xicclu.html#g">-g</a> <a
+ href="xicclu.html#k">-kp </a><a href="xicclu.html#k">0 0 .93 .87 0.15</a>
+<a href="xicclu.html#l">-l290</a>
+<a href="xicclu.html#f">-fif</a>
+<a href="xicclu.html#i">-ir</a> <a href="xicclu.html#p1">PrinterBt.icm</a><br>
+<br>
+<img style="width: 250px; height: 250px;" alt="sadsadas"
+ src="Kgraph7.jpg"><br>
+<br>
+<br>
+A high black inking:<br>
+<br>
+<a href="xicclu.html">xicclu</a> <a href="xicclu.html#g">-g</a> <a
+ href="xicclu.html#k">-kp </a><a href="xicclu.html#k">0 0 .93 .87 1.2</a>
+<a href="xicclu.html#l">-l290</a>
+<a href="xicclu.html#f">-fif</a>
+<a href="xicclu.html#i">-ir</a> <a href="xicclu.html#p1">PrinterBt.icm</a><br>
+<br>
+<img style="width: 250px; height: 250px;" alt="sadsadas"
+ src="Kgraph8.jpg"><br>
+<br>
+<span style="font-weight: bold;"></span>
 <h4>Overriding the ink limit<br>
 </h4>
 Normally the total ink limit
@@ -1229,20 +1329,21 @@ If you want to override this with a lower limit, then use the <a
 <a href="colprof.html#S">-S</a><a href="colprof.html#S"> sRGB.icm</a> <a
  href="colprof.html#c">-cmt</a> <a href="colprof.html#d">-dpp</a> <a
  href="colprof.html#k">-kr</a>
-<a href="colprof.html#p1">PrinterB</a><br>
+<a href="xicclu.html#l">-l290</a> <a href="colprof.html#p1">PrinterB</a><br>
 <br>
 Make sure you check the delta E report at the end of the profile
 creation, to see if the profile is behaving reasonably.<br>
 <br>
 One way of checking that your ink limit is not too high, is to use "<span
- style="font-weight: bold;">xicc -fif -a</span>" to check, by setting
+ style="font-weight: bold;">xicc -fif -ia</span>" to check, by setting
 different ink limits using the <span style="font-weight: bold;">-l</span>
 option, feeding Lab = 0 0 0 into it, and checking the resulting&nbsp;
 black point. Starting with the ink limit used with <span
  style="font-weight: bold;">targen</span> for the test chart, reduce it
 until the black point starts to be affected. If it is immediately
 affected by any reduction in the ink limit, then the black point may be
-improved by increasing the ink limit used on the test chart, assuming
+improved by increasing the ink limit used to generate the test chart
+and then re-print and re-measuring it, assuming
 other aspects such as wetness, smudging, spreading or drying time are
 not an issue.<br>
 <br>
@@ -1252,7 +1353,8 @@ not an issue.<br>
 <span style="font-weight: bold;">Profiling</span> creates a description
 of how a device behaves, while <span style="font-weight: bold;">calibration</span>
 on the other hand is
-intended to change how a device behaves. Argyll has the ability to
+intended to <span style="text-decoration: underline;">change</span>
+how a device behaves. Argyll has the ability to
 create per device channel calibration curves for print devices, that
 can
 then be used to improve the behavior of of the device, making a
@@ -1436,13 +1538,15 @@ file will be created:<br>
 The resulting calibration curves can be used with the following other
 Argyll tools:<br>
 <br>
-&nbsp;&nbsp;&nbsp; <a href="printtarg.html">printtarg</a>&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; <a href="printtarg.html#K">printtarg</a>&nbsp;&nbsp;&nbsp;&nbsp;
 To apply calibration to a profile test chart, and/or to have it
 included in .ti3 file.<br>
-&nbsp;&nbsp;&nbsp; <a href="cctiff.html">cctiff</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; <a href="cctiff.html#p2">cctiff</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 To apply color management and calibration to an image file.<br>
-&nbsp;&nbsp;&nbsp; <a href="applycal.html">applycal</a>&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp; <a href="applycal.html#p1">applycal</a>&nbsp;&nbsp;&nbsp;&nbsp;
 To incorporate calibration into an ICC profile.<br>
+&nbsp;&nbsp;&nbsp; <a href="chartread.html#I">chartread</a>&nbsp;&nbsp;
+To override the calibration assumed when reading a profile chart.<br>
 <br>
 <br>
 In a workflow <span style="font-weight: bold;">with</span> native

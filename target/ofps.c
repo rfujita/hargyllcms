@@ -2467,7 +2467,6 @@ static int position_vtx(
 				/* We accept a point that has an acceptable error balance */
 				/* and improves the eperr, and is in gamut if this is not a repos. */
 				/* (There's some mystery stuff in here for fixups) */
-// ~~88
 				if ((cx.nn <= 1) || (max - min) <= (ftol * 2.0)
 				 &&  ((!repos && vv->oog <= 0.01 && vv->eperr < (vv->ceperr + 0.1))
 				   || ( repos && vv->oog <= 0.01 && vv->eperr < (5.0 * vv->ceperr + 20.0))
@@ -3110,19 +3109,15 @@ int fixup		/* 0 = seed, 1 = fixup ?? */
 
 			if (s->combs[i].pvalid == 0) {	/* No valid vertex found */
 
-// ~~88
-#ifdef NEVER
-				/* If a valid vertex location was not found we tried */
-				/* using the deleted vertex's location instead, and */
-				/* relying on it getting deleted at some later stage. */
-				/* This seems to stuff the incremental fixup code up */
-				/* completely, so we simply dicard the new vertex instead. */
-				continue;
-#else
+				/* [ If a valid vertex location was not found we tried */
+				/*   using the deleted vertex's location instead, and */
+				/*   relying on it getting deleted at some later stage. */
+				/*   This seems to stuff the incremental fixup code up */
+				/*   completely, so we create a summy vertex position instead. ] */
+
 				/* Fake up a vertex position when position_vtx() has failed. */
 				dummy_vtx_position(s, ev1, ev2, &s->combs[i]);
 				goto lnew_vtx;
-#endif
 
 			} else {
 
@@ -5422,48 +5417,92 @@ ofps_reset_acc(ofps *s) {
 
 /* --------------------------------------------------- */
 
-/* Seed the object with any fixed points */
+/* Creat a randomized order list of pointers to the fixed points */
 static void
-ofps_add_fixed(
+ofps_setup_fixed(
 ofps *s,
 fxpos *fxlist,			/* List of existing fixed points */
 int fxno				/* Number in fixed list */
 ) {
 	int e, di = s->di;
-	int i, j, ii;
+	int i, j;
 
-	/* Add fixed points if there are any */
+	s->fnp = 0;
 	if (fxno == 0)
 		return;
 
-	if (s->verb)
-		printf("Adding %d fixed points\n",fxno);
-	for (i = 0; (i < fxno) && (i < s->tinp); i++) {
-		node *p = s->n[i];	/* Destination for point */
+	/* Allocate a list of pointers sufficient for all the fixed points */
+	if ((s->ufx = (fxpos **)calloc(sizeof(fxpos *), fxno)) == NULL)
+		error ("ofps: malloc failed on pointers to fixed list");
 
-		/* Ignore any duplicate points, or Voronoi will get confused.. */
-		for (ii = 0; ii < s->np; ii++) {
+	/* Add each fixed point to the list */
+	for (i = 0; i < fxno; i++) {
+
+		/* Clip the fixed point */
+		ofps_clip_point7(s, fxlist[i].p, fxlist[i].p);
+
+		/* Comute perceptual attributes */
+		s->percept(s->od, fxlist[i].v, fxlist[i].p);
+
+		/* Skip any duplicate points, or Voronoi will get confused.. */
+		for (j = 0; j < s->fnp; j++) {
 			for (e = 0; e < di; e++) {
-				if (fabs(s->n[ii]->p[e] - fxlist[i].p[e]) > 1e-5)
+				if (fabs(s->ufx[j]->p[e] - fxlist[i].p[e]) > 1e-5)
 					break;		/* Not a match */
 			}
 			if (e >= di)
 				break;			/* Is a match */
 		}
-		if (ii < s->np)
+		if (j < s->fnp)
 			continue;			/* Skip adding this point */
 
-		for (e = 0; e < di; e++)	/* copy device coords */
-			p->op[e] = p->p[e] = fxlist[i].p[e];
+		s->ufx[s->fnp++] = &fxlist[i];
+	}
 
-		/* Clip the new location */
-		ofps_clip_point7(s, p->p, p->p);
+	/* Randomly shuffle the fixed points */
+	for (i = 0; i < s->fnp; i++) {
+		fxpos *tp;
+
+		j = i_rand(0, s->fnp-1);
+
+		/* Swap the pointers */
+		tp = s->ufx[i];
+		s->ufx[i] = s->ufx[j];
+		s->ufx[j] = tp;
+	}
+	s->tinp -= (fxno - s->fnp);
+
+}
+
+/* Seed the object with any fixed points */
+/* (I think this is only used if ofps is used to check the stats */
+/*  on all the points. ) */
+static void
+ofps_add_fixed(
+ofps *s
+) {
+	int e, di = s->di;
+	int i, j, ii;
+
+	/* Add fixed points if there are any */
+	if (s->fnp == 0)
+		return;
+
+	if (s->verb)
+		printf("Adding %d unique fixed points\n",s->fnp);
+
+	for (i = 0; i < s->fnp; i++) {
+		node *p = s->n[i];	/* Destination for point */
+
+		for (e = 0; e < di; e++) {	/* copy device and perceptual coords */
+			p->op[e] = p->p[e] = s->ufx[i]->p[e];
+			p->v[e] = s->ufx[i]->v[e];
+		}
 
 		/* Count gamut surface planes it lies on */
 		det_node_gsurf(s, p, p->p);
 
 		p->fx = 1;							/* is a fixed point */
-		s->percept(s->od, p->v, p->p);		/* Comute perceptual attributes */
 
 		/* Compute the Voronoi for it, and inc s->np */
 		if (add_node2voronoi(s, s->np)) {
@@ -5473,10 +5512,8 @@ int fxno				/* Number in fixed list */
 			error("Adding a fixed point failed to hit any vertexes, and no points to swap with!");	
 		}
 
-		s->fnp = s->np;		/* Track number of fixed points */
-
 		if (s->verb)
-			printf("\rAdded fixed %d/%d",i,fxno); fflush(stdout);
+			printf("\rAdded fixed %d/%d",i,s->fnp); fflush(stdout);
 
 #ifdef DUMP_STRUCTURE
 		printf("Done node %d\n",s->np);
@@ -5487,19 +5524,17 @@ int fxno				/* Number in fixed list */
 		dump_image(s, PERC_PLOT, DO_WAIT, DUMP_VTX, DUMP_PLA, 0, -1);		/* Device, No wait, verticies */
 #endif /* DUMP_PLOT_SEED */
 	}
-
-	/* Adjust target points for number of duplicate fixed points */
-	s->tinp -= (fxno - s->fnp);
 }
 
-/* Seed the object with any movable incremental farthest points. */
-/* (We assume that any fixed points have been added first) */
+/* Seed the object with any fixed and movable incremental farthest points. */
+/* (We are only called if there is at leaset one movable point) */
 static void
 ofps_seed(ofps *s) {
 	int e, di = s->di;
-	int i, j, k;
+	int ii, i, j, k, fc;
 	double rerr;
 	int needfirst = 1;	/* Need a special first seed point */
+	int dofixed = 0;	/* Do a fixed point next */
 	int nsp = 0;		/* Number of surface points */
 	aat_atrav_t *aat_tr;
 
@@ -5509,27 +5544,23 @@ ofps_seed(ofps *s) {
 	if ((aat_tr = aat_atnew()) == NULL)
 		error("aat_atnew returned NULL");
 
-	/* See if any of the fixed points fall within the bulk of the gamut */
-	for (i = 0; i < s->fnp; i++) {
-		node *p = s->n[i];
-
-		for (e = 0; e < di; e++) {
-			if (p->p[e] <= 0.2 || p->p[e] >= 0.7)
-				break; 
-		}
-		if (e >= di)		
-			break;		/* Found one */
+	if (s->verb) {
+		printf("There are %d unique fixed points to add (%d non-unique)\n",s->fnp, s->fxno);
+		printf("There are %d far spread points to add\n",s->tinp - s->fnp);
 	}
-	if (i < s->fnp)		/* Got one in the bulk, so don't generate one */
-		needfirst = 0;
 
 	/* Seed the non-fixed points */
-	for (j = 0, i = s->fnp; i < s->tinp; i++, j++) {
+	/* (i is the node we're creating, j is the verbose interval count, */
+	/*  fc is the count of the fixed points added, ii is the movable count) */
+	for (fc = j = i = ii = 0; i < s->tinp; i++, j++) {
 		node *p = s->n[i];		/* New node */
 		double spref_mult;
 
 		/* Compute current surface preference weighting */
-		spref_mult = (i - s->fnp)/(s->tinp - s->fnp - 1.0);
+		if (s->tinp - s->fnp <= 1)	/* Prevent divide by zero */
+			spref_mult = 0.0;
+		else
+			spref_mult = ii/(s->tinp - s->fnp - 1.0);
 		spref_mult = (1.0 - spref_mult) * s->ssurfpref + spref_mult * s->esurfpref;
 
 #ifndef TESTTEST	/* Special test with forced node values */
@@ -5548,17 +5579,46 @@ ofps_seed(ofps *s) {
 
 			s->percept(s->od, p->v, p->p);
 #ifdef DEBUG
-			printf("No initial fixed point, creating first center point\n");
+			printf("Creating first seed point\n");
 #endif
-		} else {
+		} else if (dofixed) {	/* Setup to add a fixed point */
+
+#ifdef DEBUG
+			printf("Adding fixed point %d out of %d\n",fc,s->fnp);
+#endif
+
+			/* (Fixed points are already clipped and have perceptual value) */
+			for (e = 0; e < di; e++) {	/* copy device and perceptual coords */
+				p->p[e] = s->ufx[fc]->p[e];
+				p->v[e] = s->ufx[fc]->v[e];
+			}
+
+			p->fx = 1;							/* is a fixed point */
+
+			/* Count gamut surface planes it lies on */
+			if (det_node_gsurf(s, p, p->p) != 0)
+				nsp++;
+
+		} else {	/* Setup to add a movable point */
 			int k;
 			int sf = 0;
 
+			double spref_mult;
 			double mx;
 			vtx *vx, *bvx;
 			double spweight[MXPD+1];		/* Surface preference weight table */
 			double bspweight;				/* Biggest weight */
 
+#ifdef DEBUG
+			printf("Adding movable point %d out of %d\n",i,s->tinp);
+#endif
+			/* Compute current surface preference weighting */
+			if (s->tinp - s->fnp <= 1)	/* Prevent divide by zero */
+				spref_mult = 0.0;
+			else
+				spref_mult = ii/(s->tinp - s->fnp - 1.0);
+			spref_mult = (1.0 - spref_mult) * s->ssurfpref + spref_mult * s->esurfpref;
+	
 			/* Until we use the next vertex */
 			for (;;) {
 
@@ -5628,7 +5688,7 @@ ofps_seed(ofps *s) {
 				}
 
 #ifdef DEBUG
-				printf("\nPicking vertex no %d at %s with weserr %f, mask 0x%x\n",bvx->no,ppos(di,bvx->p),mx,bvx->pmask);
+				printf("Picking vertex no %d at %s with weserr %f, mask 0x%x\n",bvx->no,ppos(di,bvx->p),mx,bvx->pmask);
 #endif
 
 				/* Don't pick the vertex again */
@@ -5720,9 +5780,31 @@ ofps_seed(ofps *s) {
 
 				s->percept(s->od, p->v, p->p);
 #endif /* !RANDOM_PERTERB */
+
+				/* (~~~ Ideally we should use an accelleration structure to check */
+				/*      for cooincidence rather than doing an exaustive search. ~~~) */
+				if (fc < s->fnp) {	/* There are more fixed points to add */
+					int f;
+
+					for (f = fc; f < s->fnp; f++) {
+						for (e = 0; e < di; e++) {
+							if (fabs(p->p[e] - s->ufx[f]->v[e]) > COINTOL)
+								break;		/* Not cooincident */
+						}
+						if (e >= di) { 	/* Cooincident */
+#ifdef DEBUG
+							printf("Movable node ix %d at %s collides with fixed point %d at %s - retry movable %d\n",p->ix,ppos(di,p->p),f,ppos(di,s->ufx[f]->p),k);
+#endif
+							break;
+						}
+					}
+					if (f < s->fnp)
+						continue;		/* Retry movable point */
+				}
+
 				/* Chosen the next point */
 				break;
-			}
+			}	/* keep looking for a movable point */
 		}
 
 #else /* TESTTEST */
@@ -5782,13 +5864,36 @@ ofps_seed(ofps *s) {
 
 		/* Compute the Voronoi for it, and inc s->np */
 		if (add_node2voronoi(s, i)) {
-			if (needfirst)
-				error("Adding first seed point failed to hit any vertexes");	
+			if (needfirst || dofixed) {
+				/* For fixed we actually have the option here of aborting */
+				/* the seeding and re-shuffling the fixed points. It's not */
+				/* clear how likely this is. If we get any reports of this */
+				/* we will solve this problem... */
+				error("Adding first seed point or fixed point failed to hit any vertexes");	
+			}
 
 			/* Simply skip this vertex as a new node point */
 			--i;
 			--j;
 			continue;
+		}
+
+		/* Suceeded in adding the point */
+		if (p->fx) {	/* Fixed point */
+			fc++;
+			dofixed--;
+			if ((s->fnp - fc) >= (s->tinp - i - 1))	{	/* No room for moveable points */
+				dofixed = s->fnp - fc;
+			}
+		} else {		/* Movable point */
+			ii++;
+			if (fc < s->fnp) {	/* There are more fixed points to add */
+				dofixed = s->fnp - fc;
+				/* Add fixed 2 at a time to try and minimize the disruption */
+				/* of the movable point edge priority */
+				if (dofixed > 2)
+					dofixed = 2;
+			}
 		}
 
 		if (s->verb && (j == 11 || i == (s->tinp-1))) {
@@ -7333,7 +7438,6 @@ ofps_read(ofps *s, double *p, double *f) {
 /* The main aim is to minimize the maximum eserr of any vertex, */
 /* but moving away from low midpoint eserr's improves the */
 /* convergence rate and improves the eveness of the result. */
-// ~~88
 static void comp_opt(ofps *s, int poi, double oshoot, double sep_weight) {
 	node *pp;						/* Node in question */
 	int e, di = s->di;
@@ -7845,6 +7949,9 @@ static void
 ofps_del(ofps *s) {
 	int i, e, di = s->di;
 
+	if (s->ufx != NULL)
+		free(s->ufx);
+
 	/* Free our nodes */
 	for (i = 0; i < s->np; i++) {
 		node_free(s, s->n[i]);
@@ -7984,6 +8091,7 @@ int nopstop				/* Debug - number of optimizations until diagnostic stop, -1 = no
 	if (tinp < fxno)	/* Make sure we return at least the fixed points */
 		tinp = fxno;
 
+	s->fxno = fxno;		/* Number of fixed points provided */
 	s->tinp = tinp;		/* Target total number of points */
 	s->ilimit = ilimit;
 
@@ -8106,16 +8214,22 @@ int nopstop				/* Debug - number of optimizations until diagnostic stop, -1 = no
 	ofps_init_acc2(s);
 
 	/* Setup the fixed points */
-	ofps_add_fixed(s, fxlist, fxno);
+	ofps_setup_fixed(s, fxlist, fxno);
 
-	if (s->verb && fxno > 0) {
-		ofps_stats(s);
-		printf("After fixed points: MinPoint = %.3f, Min = %.3f, Avg. = %.3f, Max = %.3f\n",s->smns,s->mn,s->av,s->mx);
+	if (fxno > 0 && tinp <= fxno) {		/* There are no moveable points to create */
+
+		/* Add the fixed points */
+		ofps_add_fixed(s);
+
+		if (s->verb && fxno > 0) {
+			ofps_stats(s);
+			printf("After fixed points: MinPoint = %.3f, Min = %.3f, Avg. = %.3f, Max = %.3f\n",s->smns,s->mn,s->av,s->mx);
+		}
 	}
 
-	if (tinp > fxno) {		/* There are points to create */
+	if (tinp > fxno) {		/* There are movable points to create */
 
-		/* Create the moveable points */
+		/* Add the fixed points and create the moveable points */
 		ofps_seed(s);
 		ofps_re_create_node_node_vtx_lists(s);
 		ofps_create_mids(s);
@@ -8398,8 +8512,8 @@ static char *ppos(int di, double *p) {
 
 	for (e = 0; e < di; e++) {
 		double val = p[e];
-// ~~88		Make -0.00000000 turn into 0.000
-		if (val < 0.0 && val >-1e-8)
+		/* Make -0.00000000 turn into 0.000 for cosmetics */
+		if (val < 0.0 && val >-1e-9)
 			val = 0.0;
 		if (e > 0)
 			*bp++ = ' ';
@@ -9056,10 +9170,9 @@ static int check_vertexes(ofps *s) {
 #endif /* SANITY_RESEED_AFTER_FIXUPS */
 
 /* ------------------------------------------------------------------- */
-// ~~88
 /* Do an exaustive, very slow check for missing vertexes */
 /*
-	This may be really, really slow. 
+	This may be really, really, really slow. 
 
 	For every possible combination of di+1 nodes,
 	locate the corresponding vertex. If it is 

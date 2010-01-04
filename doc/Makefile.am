@@ -23,6 +23,7 @@ doc_DATA =						\
 	colprof.html					\
 	Compiling.html					\
 	CRTspectrum.jpg					\
+	CrushedDisplyBlacks.html			\
 	cube.jpg					\
 	DC.jpg						\
 	dispcal.html					\
@@ -71,6 +72,10 @@ doc_DATA =						\
 	Kgraph3.jpg					\
 	Kgraph4.jpg					\
 	Kgraph5.jpg					\
+	Kgraph6.jpg					\
+	Kgraph7.jpg					\
+	Kgraph8.jpg					\
+	Kparams.jpg					\
 	kodak2cgats.html				\
 	LabSteps.jpg					\
 	License2.txt					\

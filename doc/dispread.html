@@ -79,6 +79,11 @@ Disable auto calibration of instrument<br>
 &nbsp;&nbsp;&nbsp;&nbsp; Use high resolution spectrum mode (if
 available)<br>
 </span></font><font size="-1"><span style="font-family: monospace;">&nbsp;</span><a
+ style="font-family: monospace;" href="#V">-V</a><span
+ style="font-family: monospace;">
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp; Use adaptive measurement mode (if available)</span></font><br>
+<font size="-1"><span style="font-family: monospace;">&nbsp;</span><a
  style="font-family: monospace;" href="#C">-C "command"</a><span
  style="font-family: monospace;">
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Invoke shell "command" each
@@ -285,6 +290,13 @@ each measurement session though.<br>
 turns on high resolution spectral mode, if the instrument supports it.
 See <a href="instruments.html">Operation of particular instruments</a>
 for more details.<br>
+<br>
+<a name="V"></a> The -<span style="font-weight: bold;">V</span> option
+uses adaptive
+emission measurement mode, if the instrument supports it,
+such as the Eye-One Pro. This may give better accuracy for low level
+measurements, but may be more inconsistent overall due to the varying
+integration times. Overall measurement time will probably be longer.<br>
 <br>
 <a name="C"></a> The -<span style="font-weight: bold;">C</span> <span
  style="font-weight: bold;">"command" </span>option

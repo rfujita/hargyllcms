@@ -99,6 +99,7 @@
 #define NEF 1.0			/* Amount to emphasis neutral axis, 0 = none, 1 = CIE94 */
 #define DEFANGLE 0.3333	/* For simdlat and simplat */
 #define SIMDLAT_TYPE SIMDLAT_BCC	/* Simdlat geometry type */
+#define MATCH_TOLL 1e-3	/* Tollerance of device value to consider a patch a duplicate */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -387,7 +388,7 @@ static double efunc(void *edata, double p[]) {
 //			else if (!s->uniform && (e < 3 || e == s->kchan))
 //				tt = p[e];			/* Minimise sum of primaries & black if uniform */
 			else if (e >= 3 && e != s->kchan)
-				tt = 3.0 * p[e]; 	/* Supress non-primary, non-black */
+				tt = 3.0 * p[e]; 	/* Suppress non-primary, non-black */
 
 			ss += tt;
 		}
@@ -482,9 +483,9 @@ static double efunc2(void *edata, double p[]) {
 			f = 3;
 		for (e = 0; e < di; e++) {
 			if (e >= f)
-				ss += 10.0 * p[e]; 	/* Supress non-primary */
+				ss += 10.0 * p[e]; 	/* Suppress non-primary */
 			else if (e < 3)
-				ss += 0.05 * p[e]; 	/* Supress first 3 primary slightly */
+				ss += 0.05 * p[e]; 	/* Suppress first 3 primary slightly */
 		}
 		rv += ss * ss;
 //printf("~1 efunc2 sum err = %f, toterr %f\n",ss, rv);
@@ -1355,10 +1356,10 @@ int main(int argc, char *argv[]) {
 			pdata->dev_to_XYZ(pdata, XYZ, val);		/* Add expected XYZ */
 			if (xmask == nmask) {
 				for (e = 0; e < di; e++)
-					ary[1 + e].d = 100.0 * val[e];
+					ary[1 + e].d = 100.0 * pow(val[e],xpow);
 			} else {
 				for (e = 0; e < di; e++)
-					ary[1 + e].d = 100.0 * (1.0 - val[e]);
+					ary[1 + e].d = 100.0 * (1.0 - pow(val[e],xpow));
 			}
 			ary[1 + di + 0].d = 100.0 * XYZ[0];
 			ary[1 + di + 1].d = 100.0 * XYZ[1];
@@ -1393,15 +1394,12 @@ int main(int argc, char *argv[]) {
 
 				for (e = 0; e < di; e++) {
 					if (e == j)
-						val[e] = pow((double)i/(ssteps-1), xpow);
+						val[e] = (double)i/(ssteps-1);
 					else
 						val[e] = 0.0;
 				}
 
 				pdata->dev_to_XYZ(pdata, XYZ, val);		/* Add expected XYZ */
-
-				for (e = 0; e < di; e++)
-					val[e] = pow(val[e], xpow);
 
 				/* See if it is already in the fixed list */
 				if (fxlist != NULL) {
@@ -1410,7 +1408,7 @@ int main(int argc, char *argv[]) {
 						for (e = 0; e < di; e++) {
 							double tt;
 							tt = fabs(fxlist[k].p[e] - val[e]);
-							if (tt > 0.001)
+							if (tt > MATCH_TOLL)
 								break;			/* Not identical */
 						}
 						if (e >= di)
@@ -1430,10 +1428,10 @@ int main(int argc, char *argv[]) {
 					ary[0].c = buf;
 					if (xmask == nmask) {
 						for (e = 0; e < di; e++)
-							ary[1 + e].d = 100.0 * val[e];
+							ary[1 + e].d = 100.0 * pow(val[e],xpow);
 					} else {
 						for (e = 0; e < di; e++)
-							ary[1 + e].d = 100.0 * (1.0 - val[e]);
+							ary[1 + e].d = 100.0 * (1.0 - pow(val[e],xpow));
 					}
 					ary[1 + di + 0].d = 100.0 * XYZ[0];
 					ary[1 + di + 1].d = 100.0 * XYZ[1];
@@ -1496,9 +1494,9 @@ int main(int argc, char *argv[]) {
 
 			pdata->dev_to_XYZ(pdata, XYZ, val);		/* Add expected XYZ */
 
-			/* Apply xpow and compute sum */
+			/* Compute sum that includes affect of power */
 			for (sum = 0.0, e = 0; e < di; e++)
-				sum += val[e] = pow(val[e], xpow);
+				sum += pow(val[e], xpow);
 
 			if (sum > uilimit)
 				addp = 0;
@@ -1510,7 +1508,7 @@ int main(int argc, char *argv[]) {
 					for (e = 0; e < di; e++) {
 						double tt;
 						tt = fabs(fxlist[k].p[e] - val[e]);
-						if (tt > 0.001)
+						if (tt > MATCH_TOLL)
 							break;			/* Not identical */
 					}
 					if (e >= di)
@@ -1526,10 +1524,10 @@ int main(int argc, char *argv[]) {
 				ary[0].c = buf;
 				if (xmask == nmask) {
 					for (e = 0; e < di; e++)
-						ary[1 + e].d = 100.0 * val[e];
+						ary[1 + e].d = 100.0 * pow(val[e],xpow);
 				} else {
 					for (e = 0; e < di; e++)
-						ary[1 + e].d = 100.0 * (1.0 - val[e]);
+						ary[1 + e].d = 100.0 * (1.0 - pow(val[e],xpow));
 				}
 				ary[1 + di + 0].d = 100.0 * XYZ[0];
 				ary[1 + di + 1].d = 100.0 * XYZ[1];
@@ -1576,8 +1574,9 @@ int main(int argc, char *argv[]) {
 
 			pdata->dev_to_XYZ(pdata, XYZ, val);		/* Add expected XYZ */
 
+			/* Compute sum that includes affect of power */
 			for (sum = 0.0, e = 0; e < di; e++)
-				sum += val[e] = pow(val[e], xpow);
+				sum += pow(val[e], xpow);
 
 			if (sum > uilimit)
 				addp = 0;		/* Don't add patches over ink limit */
@@ -1589,7 +1588,7 @@ int main(int argc, char *argv[]) {
 					for (e = 0; e < di; e++) {
 						double tt;
 						tt = fabs(fxlist[k].p[e] - val[e]);
-						if (tt > 0.001)
+						if (tt > MATCH_TOLL)
 							break;			/* Not identical */
 					}
 					if (e >= di)
@@ -1607,10 +1606,10 @@ int main(int argc, char *argv[]) {
 				ary[0].c = buf;
 				if (xmask == nmask) {
 					for (e = 0; e < di; e++)
-						ary[1 + e].d = 100.0 * val[e];
+						ary[1 + e].d = 100.0 * pow(val[e],xpow);
 				} else {
 					for (e = 0; e < di; e++)
-						ary[1 + e].d = 100.0 * (1.0 - val[e]);
+						ary[1 + e].d = 100.0 * (1.0 - pow(val[e],xpow));
 				}
 				ary[1 + di + 0].d = 100.0 * XYZ[0];
 				ary[1 + di + 1].d = 100.0 * XYZ[1];
@@ -1675,7 +1674,7 @@ int main(int argc, char *argv[]) {
 									for (e = 0; e < di; e++) {
 										double tt;
 										tt = fabs(fxlist[k].p[e] - val[e]);
-										if (tt > 0.001)
+										if (tt > MATCH_TOLL)
 											break;			/* Not identical */
 									}
 									if (e >= di)
@@ -1697,10 +1696,10 @@ int main(int argc, char *argv[]) {
 								pdata->dev_to_XYZ(pdata, XYZ, val);		/* Add expected XYZ */
 								if (xmask == nmask) {
 									for (e = 0; e < di; e++)
-										ary[1 + e].d = 100.0 * val[e];
+										ary[1 + e].d = 100.0 * pow(val[e],xpow);
 								} else {
 									for (e = 0; e < di; e++)
-										ary[1 + e].d = 100.0 * (1.0 - val[e]);
+										ary[1 + e].d = 100.0 * (1.0 - pow(val[e],xpow));
 								}
 								ary[1 + di + 0].d = 100.0 * XYZ[0];
 								ary[1 + di + 1].d = 100.0 * XYZ[1];
@@ -1772,8 +1771,9 @@ int main(int argc, char *argv[]) {
 
 				pdata->dev_to_XYZ(pdata, XYZ, val);		/* Add expected XYZ */
 
+				/* Compute sum that includes the affect of power */
 				for (sum = 0.0, e = 0; e < di; e++)
-					sum += val[e] = pow(val[e], xpow);
+					sum += pow(val[e], xpow);
 
 				if (sum > uilimit)
 					continue;
@@ -1782,10 +1782,10 @@ int main(int argc, char *argv[]) {
 				ary[0].c = buf;
 				if (xmask == nmask) {
 					for (e = 0; e < di; e++)
-						ary[1 + e].d = 100.0 * val[e];
+						ary[1 + e].d = 100.0 * pow(val[e],xpow);
 				} else {
 					for (e = 0; e < di; e++)
-						ary[1 + e].d = 100.0 * (1.0 - val[e]);
+						ary[1 + e].d = 100.0 * (1.0 - pow(val[e],xpow));
 				}
 				ary[1 + di + 0].d = 100.0 * XYZ[0];
 				ary[1 + di + 1].d = 100.0 * XYZ[1];
@@ -1829,7 +1829,7 @@ int main(int argc, char *argv[]) {
 			simplat *px = NULL;
 			prand *rx = NULL;
 
-			/* (Note that the ink limit won't take into account the xpow) */
+			/* (Note that the ink limit for these algorithms won't take into account the xpow) */
 			if (uselat)	 {
 				t = new_ifarp(di, uilimit, fsteps, fxlist, fxno,
 				                (void(*)(void *, double *, double *))pdata->dev_to_perc, (void *)pdata);
@@ -1886,18 +1886,14 @@ int main(int argc, char *argv[]) {
 
 				pdata->dev_to_XYZ(pdata, XYZ, val);		/* Add expected XYZ */
 
-				/* Apply any device power */
-				for (e = 0; e < di; e++)
-					val[e] = pow(val[e], xpow);
-
-				/* Do a simple ink limit */
+				/* Do a simple ink limit that include the effect of xpow */
 				if (uilimit < (double)di) {
 					double tot = 0.0;
 					for (e = 0; e < di; e++)
-						tot += val[e];
+						tot += pow(val[e],xpow);
 					if (tot > uilimit) {
 						for (e = 0; e < di; e++)
-							val[e] *= uilimit/tot;
+							val[e] = pow(pow(val[e],xpow) * uilimit/tot, 1.0/xpow);
 					}
 				}
 
@@ -1905,10 +1901,10 @@ int main(int argc, char *argv[]) {
 				ary[0].c = buf;
 				if (xmask == nmask) {
 					for (e = 0; e < di; e++)
-						ary[1 + e].d = 100.0 * val[e];
+						ary[1 + e].d = 100.0 * pow(val[e],xpow);
 				} else {
 					for (e = 0; e < di; e++)
-						ary[1 + e].d = 100.0 * (1.0 - val[e]);
+						ary[1 + e].d = 100.0 * (1.0 - pow(val[e],xpow));
 				}
 				ary[1 + di + 0].d = 100.0 * XYZ[0];
 				ary[1 + di + 1].d = 100.0 * XYZ[1];
@@ -2124,8 +2120,14 @@ int main(int argc, char *argv[]) {
 		rad = 15.0/pow(nsets, 1.0/(double)(di <= 3 ? di : 3));
 
 		for (i = 0; i < nsets; i++) {
-			for (j = 0; j < di; j++)
-				dev[j] = 0.01 * *((double *)pp->t[0].fdata[i][j + 1]);
+			/* Re-do any inversion before using dev_to_rLab() */
+			if (xmask == nmask) {
+				for (j = 0; j < di; j++)
+					dev[j] = 0.01 * *((double *)pp->t[0].fdata[i][j + 1]);
+			} else {
+				for (j = 0; j < di; j++)
+					dev[j] = 0.01 * (100.0 - *((double *)pp->t[0].fdata[i][j + 1]));
+			}
 			pdata->dev_to_rLab(pdata, Lab, dev);
 			wrl->Lab2RGB(wrl, col, Lab);
 
@@ -2137,7 +2139,7 @@ int main(int argc, char *argv[]) {
 		vrml *wrl;
 		int nsets = pp->t[0].nsets;
 		double rad;
-		double dev[MXTD], Lab[3], col[3];
+		double dev[MXTD], idev[MXTD], Lab[3], col[3];
 
 		wrl = new_vrml(wdname, 0);
 
@@ -2145,12 +2147,20 @@ int main(int argc, char *argv[]) {
 		rad = 15.0/pow(nsets, 1.0/(double)(di <= 3 ? di : 3));
 
 		for (i = 0; i < nsets; i++) {
-			for (j = 0; j < di; j++)
-				dev[j] = 0.01 * *((double *)pp->t[0].fdata[i][j + 1]);
-			pdata->dev_to_rLab(pdata, Lab, dev);
+			/* Re-do any inversion before using dev_to_rLab() */
+			if (xmask == nmask) {
+				for (j = 0; j < di; j++)
+					idev[j] = dev[j] = 0.01 * *((double *)pp->t[0].fdata[i][j + 1]);
+			} else {
+				for (j = 0; j < di; j++) {
+					dev[j] = 0.01 * *((double *)pp->t[0].fdata[i][j + 1]);
+					idev[j] = 1.0 - dev[j];
+				}
+			}
+			pdata->dev_to_rLab(pdata, Lab, idev);
 			wrl->Lab2RGB(wrl, col, Lab);
 
-			/* Fudge device values into Lab space */
+			/* Fudge device locations into Lab space */
 			Lab[0] = 100.0 * dev[0];
 			Lab[1] = 100.0 * dev[1] - 50.0;
 			Lab[2] = 100.0 * dev[2] - 50.0;

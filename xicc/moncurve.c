@@ -544,7 +544,7 @@ double smooth) {
 		cx = i - 2 + p->noos; 
 		tt = pms[i];
 
-		/* Weigh to supress ripples */
+		/* Weigh to suppress ripples */
 		if (cx <= 1) {
 			w = HW01;
 		} else if (cx <= HBREAK) {
@@ -647,7 +647,7 @@ double smooth) {
 		cx = i - 2 + p->noos; 
 		tt = pms[i];
 
-		/* Weigh to supress ripples */
+		/* Weigh to suppress ripples */
 		if (cx <= 1) {			/* First or second curves */
 			w = HW01;
 		} else if (cx <= HBREAK) {	/* First or second curves */

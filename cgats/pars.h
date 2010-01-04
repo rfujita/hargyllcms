@@ -171,7 +171,7 @@ cgatsFile *new_cgatsFileMem_ad(void *base, size_t length, cgatsAlloc *al);
 
 /* This is avalailable if SEPARATE_STD is not defined: */
 
-/* Create a memory image file access class */
+/* Create a memory image file access class with the std allocator */
 cgatsFile *new_cgatsFileMem(void *base, size_t length);
 
 
