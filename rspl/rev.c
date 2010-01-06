@@ -2075,7 +2075,7 @@ static int auxil_setsort(schbase *b, cell *c) {
 		int ei = b->auxi[ee];
 		double tt = (c->p[0][ei] + c->p[ixc][ei]) - b->av[ei];
 		sort += tt * tt;
-		if (c->p[ixc][ei] >= b->av[ei])		/* Could be above */
+		if (c->p[ixc][ei] >= (b->av[ei] - EPS))		/* Could be above */
 			nabove++;
 	}
 
@@ -2113,7 +2113,7 @@ static int auxil_check(schbase *b, cell *c) {
 
 	for (nabove = ee = 0; ee < b->naux; ee++) {
 		int ei = b->auxi[ee];
-		if (c->p[ixc][ei] >= b->av[ei])		/* Could be above */
+		if (c->p[ixc][ei] >= (b->av[ei] - EPS))		/* Could be above */
 			nabove++;
 	}
 
@@ -2170,7 +2170,7 @@ static int auxil_compute(schbase *b, simplex *x) {
 	/* Check if this cell could possible improve b->idist */
 	for (nabove = e = 0; e < b->naux; e++) {
 		int ei = b->auxi[e];					/* pmin/max[] is indexed in input space */
-		if (x->pmax[ei] >= b->av[ei])	/* Could be above */
+		if (x->pmax[ei] >= (b->av[ei] - EPS))	/* Could be above */
 			nabove++;
 	}
 	if ((b->flags & RSPL_MAXAUX) && nabove < b->iabove) {
@@ -2215,7 +2215,7 @@ static int auxil_compute(schbase *b, simplex *x) {
 		int ei = b->auxi[e];
 		double tt = b->av[ei] - p[ei];
 		idist += tt * tt;
-		if (p[ei] >= b->av[ei])
+		if (p[ei] >= (b->av[ei] - EPS))
 			nabove++;
 	}
 	idist = sqrt(idist);
@@ -2226,7 +2226,7 @@ static int auxil_compute(schbase *b, simplex *x) {
 	if (b->nsoln != 0) {
 		if (b->flags & RSPL_MAXAUX) {
 			if (nabove < b->iabove || (nabove == b->iabove && idist >= b->idist)) {
-				DBG(("idist = %f, better solution has been found before\n",idist));
+				DBG(("nabove %d, iabove %d, idist = %f, better solution has been found before\n",nabove, b->iabove, idist));
 				return 0;
 			}
 		} else {

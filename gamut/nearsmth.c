@@ -274,8 +274,8 @@ int expand_weights(gammapweights out[14], gammapweights *in) {
 	return 0;
 }
 
-/* Tweak weights acording to extra cmy cusp flags */
-void tweak_weights(gammapweights out[14], int dst_cmymap)  {
+/* Tweak weights acording to extra cmy cusp flags or rel override */
+void tweak_weights(gammapweights out[14], int dst_cmymap, int rel_oride)  {
 	int i;
 
 	for (i = 0; i < 14; i++) {
@@ -287,6 +287,19 @@ void tweak_weights(gammapweights out[14], int dst_cmymap)  {
 			out[i].c.w.c = 1.0;
 			out[i].c.w.h = 1.0;
 			out[i].c.cx = 1.0;		/* No expansion */
+		}
+
+		if (rel_oride == 1) {		/* A high saturation "clip" like mapping */
+			out[i].r.o = 0.0;		/* No relative weight */
+			out[i].r.rdl = 1.0;		/* No relative neighbourhood */
+			out[i].r.rdh = 1.0;		/* No relative neighbourhood */
+			out[i].d.co = 0.0;		/* No depth weighting */
+			out[i].d.xo = 0.0;		/* No depth weighting */
+			
+		} else if (rel_oride == 2) {	/* A maximal feature preserving mapping */
+			out[i].r.o = 2.0;		/* Extra relative weight */
+			out[i].r.rdl *= 1.4;	/* Extra neighbourhood size */
+			out[i].r.rdh *= 1.4;	/* Extra neighbourhood size */
 		}
 	}
 }

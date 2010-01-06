@@ -625,6 +625,11 @@ main(int argc, char *argv[]) {
 
 	ink.KonlyLmin = 0;		/* Use normal black as locus Lmin */
 
+	ink.c.Ksmth = ICXINKDEFSMTH;	/* Default curve smoothing */
+	ink.c.Kskew = ICXINKDEFSKEW;	/* default curve skew */
+	ink.x.Ksmth = ICXINKDEFSMTH;
+	ink.x.Kskew = ICXINKDEFSKEW;
+
 	if (inking == 0) {			/* Use minimum */
 		ink.k_rule = locus ? icxKluma5 : icxKluma5k;	/* Locus or value target */
 		ink.c.Kstle = 0.0;
@@ -648,8 +653,6 @@ main(int argc, char *argv[]) {
 		ink.c.Kshap = 1.0;
 	} else if (inking == 3) {	/* Use ramp  */
 		ink.k_rule = locus ? icxKluma5 : icxKluma5k;	/* Locus or value target */
-		ink.c.Ksmth = ICXINKDEFSMTH;	/* Default curve smoothing */
-		ink.c.Kskew = ICXINKDEFSKEW;	/* default curve skew */
 		ink.c.Kstle = 0.0;
 		ink.c.Kstpo = 0.0;
 		ink.c.Kenpo = 1.0;
@@ -661,8 +664,6 @@ main(int argc, char *argv[]) {
 		ink.k_rule = icxKvalue;
 	} else if (inking == 6) {	/* Use specified curve */
 		ink.k_rule = locus ? icxKluma5 : icxKluma5k;	/* Locus or value target */
-		ink.c.Ksmth = ICXINKDEFSMTH;	/* Default curve smoothing */
-		ink.c.Kskew = ICXINKDEFSKEW;	/* default curve skew */
 		ink.c.Kstle = Kstle;
 		ink.c.Kstpo = Kstpo;
 		ink.c.Kenpo = Kenpo;
@@ -670,15 +671,11 @@ main(int argc, char *argv[]) {
 		ink.c.Kshap = Kshap;
 	} else {				/* Use dual curves */
 		ink.k_rule = locus ? icxKl5l : icxKl5lk;	/* Locus or value target */
-		ink.c.Ksmth = ICXINKDEFSMTH;	/* Default curve smoothing */
-		ink.c.Kskew = ICXINKDEFSKEW;	/* default curve skew */
 		ink.c.Kstle = Kstle;
 		ink.c.Kstpo = Kstpo;
 		ink.c.Kenpo = Kenpo;
 		ink.c.Kenle = Kenle;
 		ink.c.Kshap = Kshap;
-		ink.x.Ksmth = ICXINKDEFSMTH;
-		ink.x.Kskew = ICXINKDEFSKEW;
 		ink.x.Kstle = Kstle1;
 		ink.x.Kstpo = Kstpo1;
 		ink.x.Kenpo = Kenpo1;
@@ -857,6 +854,7 @@ main(int argc, char *argv[]) {
 			in[1] = ival * end[1] + (1.0 - ival) * start[1];
 			in[2] = ival * end[2] + (1.0 - ival) * start[2];
 
+in[1] = in[2] = 0.0;
 			/* Do the conversion */
 			if (invert) {
 				if ((rv = luo->inv_lookup(luo, out, in)) > 1)

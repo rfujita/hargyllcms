@@ -166,12 +166,18 @@ gammapweights pweights[] = {
 		{			/* Weighting of relative error of destination points to each */
 					/* other, compared to source points to each other. */
 			1.0,	/* Relative error overall weight */
+// ~~~888
+//			2.0,	/* Relative error overall weight */
+//			0.0,	/* Relative error overall weight */
 			{
 				30.0,	/* Relative luminance error weight */
 				20.0,	/* Relative chroma error weight */
 				30.0	/* Relative hue error weight */
 			},
+// ~~~888
 			25.0, 30.0	/* Relative Smoothing radius L* H* */
+//			35.0, 40.0	/* Relative Smoothing radius L* H* */
+//			1.0, 1.0	/* Relative Smoothing radius L* H* */
 		},
 		{			/* Weighting of error between destination point and source */
 					/* point radially mapped towards center of destination. */
@@ -384,6 +390,7 @@ gammap *new_gammap(
 	int src_kbp,		/* Use K only black point as src gamut black point */
 	int dst_kbp,		/* Use K only black point as dst gamut black point */
 	int dst_cmymap,		/* masks C = 1, M = 2, Y = 4 to force 100% cusp map */
+	int rel_oride,		/* 0 = normal, 1 = override min relative, 2 = max relative */
 	int    mapres,		/* Gamut map resolution, typically 9 - 33 */
 	double *mn,			/* If not NULL, set minimum mapping input range */
 	double *mx,			/* for rspl grid. */
@@ -1309,9 +1316,9 @@ typedef struct {
 		if ((gmi->gampwf + gmi->gamswf) > 0.1)
 			smooth = (gmi->gampwf * psmooth) + (gmi->gamswf * ssmooth);
 
-		/* Tweak gamut mappings according to extra cmy cusp flags */ 
+		/* Tweak gamut mappings according to extra cmy cusp flags or rel override */ 
 		if (dst_cmymap != 0) {
-			tweak_weights(xwh, dst_cmymap); 
+			tweak_weights(xwh, dst_cmymap, rel_oride); 
 		}
 
 		/* Create the near point mapping, which is our fundamental gamut */
@@ -2283,6 +2290,8 @@ double *in
 
 	/* If there is a 3D->3D mapping */
 	if (s->map != NULL) {
+		int e;
+
 		/* Clip out of range a, b proportionately */
 		if (rin[1] < s->imin[1] || rin[1] > s->imax[1]
 		 || rin[2] < s->imin[2] || rin[2] > s->imax[2]) {
@@ -2306,9 +2315,8 @@ double *in
 		cp.p[2] = rin[2];
 		s->map->interp(s->map, &cp);
 	
-		out[0] = cp.v[0];
-		out[1] = cp.v[1];
-		out[2] = cp.v[2];
+		for (e = 0; e < s->map->fdi; e++)
+			out[e] = cp.v[e];
 	
 		if (s->dbg) printf("domap: after 3D map %f %f %f\n\n",out[0],out[1],out[2]);
 	} else {

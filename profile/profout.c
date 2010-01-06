@@ -2133,7 +2133,7 @@ make_output_icc(
 					/* values outside the grid range. */
 
 					/* setup perceptual gamut mapping */
-					cx.pmap = new_gammap(verb, csgamp, igam, ogam, pgmi, 0, 0, 0, mapres,
+					cx.pmap = new_gammap(verb, csgamp, igam, ogam, pgmi, 0, 0, 0, 0, mapres,
 					                     NULL, NULL, gamdiag ? "gammap_p.wrl" : NULL);
 					if (cx.pmap == NULL)
 						error ("Failed to make perceptual gamut map transform");
@@ -2146,7 +2146,7 @@ make_output_icc(
 
 					if (sepsat) {
 						/* setup saturation gamut mapping */
-						cx.smap = new_gammap(verb, csgams, igam, ogam, sgmi, 0, 0, 0, mapres,
+						cx.smap = new_gammap(verb, csgams, igam, ogam, sgmi, 0, 0, 0, 0, mapres,
 						                     NULL, NULL, gamdiag ? "gammap_s.wrl" : NULL);
 						if (cx.smap == NULL)
 							error ("Failed to make saturation gamut map transform");
@@ -2209,6 +2209,7 @@ make_output_icc(
 				}
 			}
 
+// ====================================================================
 #ifdef NEVER
 // ~~99
 			/* DEVELOPMENT CODE - not complete */
@@ -2381,6 +2382,7 @@ make_output_icc(
 				xf->del(xf);
 			}
 #endif /* NEVER (Setup optimised B2A per channel curves) */
+// ====================================================================
 
 			/* We now setup an exact inverse, colorimetric style, plus gamut mapping */
 			/* for perceptual and saturation intents */
@@ -2651,6 +2653,10 @@ make_output_icc(
 
 		wr_xicc->del(wr_xicc);
 	}
+
+	/* We're done with any cal now */
+	if (cal != NULL)
+		cal->del(cal);
 
 	/* Write the file (including all tags) out */
 	if ((rv = wr_icco->write(wr_icco,wr_fp,0)) != 0) {

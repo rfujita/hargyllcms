@@ -79,7 +79,7 @@ void usage(char *diag, ...) {
 	fprintf(stderr," -i              Initial calibration, set targets, create .cal\n");
 	fprintf(stderr," -r              Re-calibrate against previous .cal and create new .cal\n");
 	fprintf(stderr," -e              Verify against previous .cal\n");
-	fprintf(stderr," -n              Go through the motions but don't write any files\n");
+	fprintf(stderr," -d              Go through the motions but don't write any files\n");
 	fprintf(stderr," -A manufacturer Set the manufacturer description string\n");
 	fprintf(stderr," -M model        Set the model description string\n");
 	fprintf(stderr," -D description  Set the profile Description string\n");
@@ -546,7 +546,7 @@ int main(int argc, char *argv[]) {
 	profxinf xpi;				/* Extra profile/calibration information */
 	pcaltarg *upct = NULL;		/* User settings of print calibration target */
 	pcaltarg *pct = NULL;		/* Settings of print calibration target */
-	double smooth = 5.0;		/* RSPL Smoothness factor */
+	double smooth = 4.0;		/* RSPL Smoothness factor */
 	double ver_maxde = 2.0;		/* Verify maximum Delta E (1.0 for smooth == 1.0) */
 	int spec = 0;				/* Use spectral data flag */
 	icxIllumeType illum = icxIT_D50;	/* Spectral defaults */
@@ -644,7 +644,7 @@ int main(int argc, char *argv[]) {
 			else if (argv[fa][1] == 'e' || argv[fa][1] == 'E')
 				verify = 1;			/* Verify */
 
-			else if (argv[fa][1] == 'n' || argv[fa][1] == 'N')
+			else if (argv[fa][1] == 'd' || argv[fa][1] == 'D')
 				dowrite = 0;			/* Don't write to files */
 
 			else if (argv[fa][1] == 'a')

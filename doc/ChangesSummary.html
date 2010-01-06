@@ -15,6 +15,22 @@
 <body>
 <h1> Summary of Argyll CMS Changes since last release</h1>
 <h3>For detailed change list please see the log.txt file.</h3>
+<h1>[V1.1.0 RC3 -&gt; V1.1.0 RC4]</h1>
+<ul>
+  <li>Fixed bug in xicclu -pz that caused maximum rather than minimum
+ink. Also fixed tolerance glitch in rspl/rev.c that was causing
+non-exact black values to be returned.<br>
+  </li>
+  <li>Changed printtarg so that the TIFF output has the paper margin
+subtracted from it. This is so that the resulting TIFF can be placed on
+that sized paper without clipping or scaling. Set the margin to zero to
+get a TIFF that exactly fits into the specified paper size</li>
+  <li>Fixed bug in colprof -aX which caused crash when there is
+calibration curves. <br>
+  </li>
+  <li>Fixed bug in printcal, changed first -n to -d to distinguish it
+from second -n parameter.</li>
+</ul>
 <h1>[V1.1.0 RC2 -&gt; V1.1.0 RC3]</h1>
 <ul>
   <li>Improve XYZ B2A table quality by scaling PCS range.</li>

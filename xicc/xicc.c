@@ -804,6 +804,7 @@ icc *picc		/* icc we are expanding */
 
 	/* Create an xcal if there is the right tag in the profile */
 	p->cal = xiccReadCalTag(p->pp);
+	p->nodel_cal = 0;	/* We created it, we will delete it */
 
 	return p;
 }
@@ -812,7 +813,7 @@ icc *picc		/* icc we are expanding */
 static void xicc_del(
 xicc *p
 ) {
-	if (p->cal != NULL)
+	if (p->cal != NULL && p->nodel_cal == 0)
 		p->cal->del(p->cal);
 	free (p);
 }
@@ -971,14 +972,19 @@ double smooth,				/* RSPL smoothing factor, -ve if raw */
 double avgdev,				/* reading Average Deviation as a proportion of the input range */
 icxViewCond *vc,			/* Viewing Condition (NULL if not using CAM) */
 icxInk *ink,				/* inking details (NULL for default) */
-xcal *cal,                  /* Optional cal. Will be deleted by xicc */
+xcal *cal,                  /* Optional cal, will override any existing (not deleted with xicc)*/
 int quality					/* Quality metric, 0..3 */
 ) {
 	icmLuBase *plu;
 	icxLuBase *xplu = NULL;
 	icmLuAlgType alg;
 
-	p->cal = cal;
+	if (cal != NULL) {
+		if (p->cal != NULL && p->nodel_cal == 0)
+			p->cal->del(p->cal);
+		p->cal = cal;
+		p->nodel_cal = 1;	/* We were given it, so don't delete it */
+	}
 
 	if (func != icmFwd) {
 		p->errc = 1;
@@ -1956,6 +1962,9 @@ char *as				/* Alias string selector, NULL for none */
 		gmi->gamcpf  = 1.0;			/* Full gamut compression */
 		gmi->gamexf  = 0.0;			/* No gamut expansion */
 		gmi->gamcknf  = 0.7;		/* Moderate Sigma knee in gamut compress */
+// ~~888
+//		gmi->gamcknf  = 0.0;		/* Moderate Sigma knee in gamut compress */
+//		gmi->gamcknf  = 1.0;		/* Moderate Sigma knee in gamut compress */
 		gmi->gamxknf  = 0.0;		/* No knee in gamut expand */
 		gmi->gampwf  = 1.0;			/* Full Perceptual surface weighting factor */
 		gmi->gamswf  = 0.0;			/* No Saturation surface weighting factor */

@@ -233,5 +233,8 @@ gammapweights *src1, double wgt1,
 gammapweights *src2, double wgt2
 );
 
+/* Tweak weights acording to extra cmy cusp flags or rel override */
+void tweak_weights(gammapweights out[14], int dst_cmymap, int rel_oride);
+
 #endif /* NEARSMTH_H */
 

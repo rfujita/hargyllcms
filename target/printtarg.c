@@ -855,11 +855,12 @@ static void tiff_del(trend *ss) {
 	free(s);
 }
 
-trend *new_tiff_trend(
+static trend *new_tiff_trend(
 	char *fname,				/* File name */
 	int nmask,					/* Non zero if we are doing a DeviceN chart */
 	depth2d dpth,				/* 8 or 16 bit */
 	double pw, double ph,		/* Page width and height in mm */
+	double marg,				/* Page margine in mm */
 	double hres, double vres,	/* Resolution */
 	int pgreyt,					/* printer grey representation type 0..6 */
 	int ncha,					/* flag, use nchannel alpha */
@@ -868,6 +869,7 @@ trend *new_tiff_trend(
 	tiff_trend *s;
 	color2d c;					/* Background color */
 	colort2d csp;
+	double ma[4];				/* Page margines */
 	int nc = 0;
 	int j;
 
@@ -931,7 +933,9 @@ trend *new_tiff_trend(
 		nc = icx_noofinks(nmask);
 	}
 
-	if ((s->r = new_render2d(pw, ph, hres, vres,  csp, nc, dpth)) == NULL) {
+	ma[0] = ma[1] = ma[2] = ma[3] = marg;
+
+	if ((s->r = new_render2d(pw, ph, ma, hres, vres,  csp, nc, dpth)) == NULL) {
 		error("Failed to create a render2d object for tiff output");
 	} 
 
@@ -1647,7 +1651,7 @@ xcal *cal,			/* Optional printer calibration, NULL if none */
 char *label,		/* Per strip label */
 double pw,			/* Page width */
 double ph,			/* Page height */
-double bord, 		/* Border in mm */
+double bord, 		/* Border margin in mm */
 int nollimit,		/* NZ to not limit the strip length */
 int nolpcbord,		/* NZ to suppress left paper clip border */
 int rand,			/* Randomise flag */
@@ -2342,9 +2346,11 @@ int *p_npat			/* Return number of patches including padding */
 							sprintf(psname,"%s.tif",bname);
 
 						res = tiffres/25.4; 
-						if ((tro = new_tiff_trend(psname,nmask,tiffdpth,pw,ph,res,res,pgreyt,ncha,tiffcomp)) == NULL)
+						if ((tro = new_tiff_trend(psname,nmask,tiffdpth,pw,ph,bord, res,res,pgreyt,ncha,tiffcomp)) == NULL)
 							error ("Unable to create output rendering object file '%s'",psname);
 					}
+					if (verb)
+						printf("Creating file '%s'\n",psname);
 					tro->startpage(tro,pif);
 
 					/* Print all the row labels */
@@ -2787,7 +2793,7 @@ void usage(char *diag, ...) {
 	fprintf(stderr," -L              Suppress any left paper clip border\n");       
 	fprintf(stderr," -p size         Select page size from:\n");
 	for (pp = psizes; pp->name != NULL; pp++)
-		fprintf(stderr,"                 %s	[%.1f x %.1f mm]%s\n", pp->name, pp->w, pp->h,
+		fprintf(stderr,"                 %-8s [%.1f x %.1f mm]%s\n", pp->name, pp->w, pp->h,
 		pp->def ? " (default)" : "");
 	fprintf(stderr," -p WWWxHHH      Custom size, WWW mm wide by HHH mm high\n");
 	fprintf(stderr," basname         Base name for input(.ti1), output(.ti2) and output(.ps/.eps/.tif)\n");

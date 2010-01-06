@@ -1234,7 +1234,7 @@ void usage(char *diag, ...) {
 	fprintf(stderr," -t [temp]            White Daylight locus target, optional target temperaturee in deg. K (deflt.)\n");
 	fprintf(stderr," -T [temp]            White Black Body locus target, optional target temperaturee in deg. K\n");
 	fprintf(stderr," -w x,y        	      Set the target white point as chromaticity coordinates\n");
-#ifdef NEVER	/* Not worth confusing people about this */
+#ifdef NEVER	/* Not worth confusing people about this ? */
 	fprintf(stderr," -L                   Show CCT/CDT rather than VCT/VDT during native white point adjustment\n");
 #endif
 	fprintf(stderr," -b bright            Set the target white brightness in cd/m^2\n");

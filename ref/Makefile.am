@@ -11,6 +11,7 @@ ref_DATA =						\
 	ColorCheckerDC.cht				\
 	ColorCheckerSG.cht				\
 	ColorChecker.ti2				\
+	ColorChecker.cie				\
 	D50_0.0.sp					\
 	D50_0.3.sp					\
 	D50_0.5.sp					\

@@ -13,6 +13,7 @@
  * see the License.txt file for licencing details.
  */
 
+
 /* Gamut mapping object */
 struct _gammap {
 
@@ -54,6 +55,7 @@ gammap *new_gammap(
 	int src_kbp,		/* Use K only black point as src gamut black point */
 	int dst_kbp,		/* Use K only black point as dst gamut black point */
 	int dst_cmymap,		/* masks C = 1, M = 2, Y = 4 to force 100% cusp map */
+	int rel_oride,		/* 0 = normal, 1 = override min relative, 2 = max relative */
 	int    mapres,		/* Gamut map resolution, typically 9 - 33 */
 	double *mn,			/* If not NULL, set minimum mapping input range */
 	double *mx,			/* for rspl grid */

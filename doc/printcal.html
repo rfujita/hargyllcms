@@ -31,7 +31,7 @@ create new .cal</small><br style="font-family: monospace;">
 <span style="font-family: monospace;"></span><small
  style="font-family: monospace;">&nbsp;<a href="#e">-e</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; Verify against previous .cal<br>
-</small><small style="font-family: monospace;">&nbsp;<a href="n">-n</a>
+</small><small style="font-family: monospace;">&nbsp;<a href="#d">-d</a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp; &nbsp; &nbsp; &nbsp;&nbsp; Go through the motions but don't
 write any files</small><br style="font-family: monospace;">
@@ -104,18 +104,18 @@ Base name of input .ti3 file, output .cal file</span><br>
 information as the calibration is created. An argument greater than 1
 increases the verbosity.<br>
 <br>
-<a name="A"></a><span style="font-weight: bold;">-p</span> Turns on
+<a name="p"></a><span style="font-weight: bold;">-p</span> Turns on
 plot mode. This causes various graphs to be plotted as the calibration
 is created.<br>
 <br>
-<a name="A"></a><span style="font-weight: bold;">-i</span> Select
+<a name="i"></a><span style="font-weight: bold;">-i</span> Select
 initial calibration mode. Initial calibration mode allows setting the
 targets for the calibration, such as maximum device percentage, minimum
 white level, and the transfer curve shape. The second last parameter <span
  style="font-weight: bold;"><span style="font-weight: bold;"></span>prevcal</span>
 is not used in this mode.<br>
 <br>
-<a name="A"></a><span style="font-weight: bold;">-r</span> Turns on
+<a name="r"></a><span style="font-weight: bold;">-r</span> Turns on
 re-calibration mode. This is used for calibrations after the initial
 one, where the aim is to return the devices response to the same state
 as it was after the initial caibration. Parameters that affect the
@@ -123,12 +123,12 @@ calibration targets are ignored. The second last parameter <span
  style="font-weight: bold;"><span style="font-weight: bold;"></span>prevcal</span>
 is used to establish what the targets for the calibration are.<br>
 <br>
-<a name="A"></a><span style="font-weight: bold;">-e</span> Turns on
+<a name="e"></a><span style="font-weight: bold;">-e</span> Turns on
 verify mode. In this mode the test chart input is verified agains the
 expected response in the <span style="font-weight: bold;"><span
  style="font-weight: bold;"></span>prevcal</span> file.<br>
 <br>
-<a name="A"></a><span style="font-weight: bold;">-n</span> Disables the
+<a name="d"></a><span style="font-weight: bold;">-d</span> Disables the
 writing of any files, causing printcal to go through the motions
 without changing anything.<br>
 <br>
@@ -176,7 +176,7 @@ flag or as a final command line parameters. By default no copyright
 string
 will be put in the calibration file.<br>
 <br>
-<a name="q"></a> The <b>-x</b> parameter allows overriding the default
+<a name="x"></a> The <b>-x</b> parameter allows overriding the default
 maximum device value computed from the raw device response. The default
 uses a heuristic to decide when the response of the device to each
 channels colorant value reaches the point of diminishing returns, while

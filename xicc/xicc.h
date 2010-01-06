@@ -187,7 +187,8 @@ struct _xicc {
 	/* Private: */
 	icc *pp;			/* ICC profile we expand */
 
-	struct _xcal *cal;			/* Optional device cal, NULL if none, set by get/set luobj */
+	struct _xcal *cal;	/* Optional device cal, NULL if none */
+	int nodel_cal;		/* Flag, nz if cal was provided externally and shouldn't be deleted */
 
 	/* Public: */
 	void                 (*del)(struct _xicc *p);
@@ -255,8 +256,8 @@ struct _xicc {
 	                                                            /* used if pcsor == CIECAM. */
 																/* or ICX_CAM_CLIP flag. */
 	                                  icxInk *ink,				/* inking details */
-	                                  struct _xcal *cal,				/* Optional cal. Will be */
-																/* deleted by xicc. */
+	                                  struct _xcal *cal,		/* Optional cal Will override any */
+																/* existing, not deltd with xicc. */
 	                                  int quality);				/* Quality metric, 0..3 */
 
 

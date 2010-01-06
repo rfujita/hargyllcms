@@ -198,6 +198,7 @@ main(int argc, char *argv[]) {
 		&gmi,
 		0, 0, 		/* Normal black points */
 		0,			/* Normal CMY cusp mapping */
+		0,			/* No relative weighting override */
 		17,			/* rspl resolution of 17 */
 		NULL,		/* No input range override */
 		NULL,

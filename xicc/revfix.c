@@ -544,6 +544,8 @@ main(int argc, char *argv[]) {
 
 		ink.c.Ksmth = ICXINKDEFSMTH;	/* Default curve smoothing */
 		ink.c.Kskew = ICXINKDEFSKEW;	/* default curve skew */
+		ink.x.Ksmth = ICXINKDEFSMTH;
+		ink.x.Kskew = ICXINKDEFSKEW;
 
 		if (inking == 0) {
 			ink.k_rule = icxKvalue;		/* K is auxiliary target */

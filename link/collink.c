@@ -95,6 +95,7 @@
 #undef DEBUG_ONE	/* test a single value out. Look for DBGNO to set value. */
 #undef NEUTKDEBUG	/* print info about neutral L -> K mapping */
 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -241,6 +242,7 @@ struct _link {
 	int wphack;		/* 0 = off, 1 = hack to map input wp to output wp, 2 = to hwp[] */
 	double hwp[3];	/* hack destination white point in PCS space */
 	int wphacked;	/* Operation flag, set nz if white point was translated */
+	int rel_oride;	/* Relative override flag */
 
 	icmFile *abs_fp;	/* Abstract profile transform */
 	icRenderingIntent abs_intent;
@@ -256,6 +258,7 @@ struct _link {
 	gammap *map;	/* Gamut mapping */
 	gammap *Kmap;	/* Gamut mapping K in to K out nhack == 2 and K in to K out */
 	
+
 	/* Per profile setup information */
 	profinfo in;
 	profinfo out;
@@ -1073,6 +1076,7 @@ main(int argc, char *argv[]) {
 
 	error_program = argv[0];
 	memset((void *)&xpi, 0, sizeof(profxinf));	/* Init extra profile info to defaults */
+	memset((void *)&li, 0, sizeof(link));
 
 	/* Set defaults */
 	li.verb = 0;
@@ -1274,7 +1278,7 @@ main(int argc, char *argv[]) {
 			}
 
 			/* Simple mode */
-			else if (argv[fa][1] == 's' || argv[fa][1] == 'S') {
+			else if (argv[fa][1] == 's') {
 				li.mode = 0;
 				modeset = 1;
 			}
@@ -2410,7 +2414,7 @@ main(int argc, char *argv[]) {
 			printf(" Creating Gamut match\n");
 
 		li.map = new_gammap(li.verb, csgam, igam, ogam, &li.gmi,
-		                    li.src_kbp, li.dst_kbp, li.cmyhack,
+		                    li.src_kbp, li.dst_kbp, li.cmyhack, li.rel_oride,
 		                    mapres, NULL, NULL, li.gamdiag ? "gammap.wrl" : NULL);
 		if (li.map == NULL)
 			error ("Failed to make gamut map transform");
@@ -2419,11 +2423,13 @@ main(int argc, char *argv[]) {
 			if (li.verb)
 				printf(" Creating K only black to K only black Gamut match\n");
 
-			li.Kmap = new_gammap(li.verb, csgam, igam, ogam, &li.gmi, 1, 1, li.cmyhack,
+			li.Kmap = new_gammap(li.verb, csgam, igam, ogam, &li.gmi,
+			                    1, 1, li.cmyhack, li.rel_oride,
 			                    mapres, NULL, NULL, li.gamdiag ? "gammap.wrl" : NULL);
 			if (li.Kmap == NULL)
 				error ("Failed to make K only gamut map transform");
 		}
+
 
 		ogam->del(ogam);
 		if (igam != NULL)

@@ -417,6 +417,8 @@ int main(int argc, char *argv[]) {
 	ink.KonlyLmin = 0;				/* Use normal black Lmin for locus */
 	ink.c.Ksmth = ICXINKDEFSMTH;	/* Default curve smoothing */
 	ink.c.Kskew = ICXINKDEFSKEW;	/* default curve skew */
+	ink.x.Ksmth = ICXINKDEFSMTH;
+	ink.x.Kskew = ICXINKDEFSKEW;
 
 	if (inking == 0) {			/* Use minimum */
 		ink.k_rule = locus ? icxKluma5 : icxKluma5k;

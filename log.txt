@@ -2,7 +2,25 @@
 Argyll CMS change log
 =====================
 
-Version 1.1.0 RC3 (26 December 2009) 
+Version 1.1.0 RC4 
+-----------------
+
+*	Fixed bug in xicclu -pz that caused maximum rather than
+	minimum ink. Also fixed tollerance glitch in rspl/rev.c that was causing
+	non-exact black values to be returned.
+
+*	Changed printtarg so that the TIFF output has the paper margin subtracted
+	from it. This is so that the resulting TIFF can be placed on that sized paper
+	without clipping or scaling. Set the margin to zero to get a TIFF that
+	exactly fits into the specified paper size.
+
+*	Fixed bug in colprof -aX which caused crash when there is calibration
+	curves.
+
+*	Fixed bug in printcal, changed first -n to -d to distinguish it
+	from second -n paramater.
+
+Version 1.1.0 RC3 (4th January 2009) 
 -----------------
 
 *	Fixed bug in Linux profile uninstall (dispwin -U)
@@ -28,6 +46,7 @@ Version 1.1.0 RC3 (26 December 2009)
 	Updated tutorial to reflect these changes.
 	Note that the -kp parameter values will have to
 	be re-established for a particular device using V1.1.0 RC3.
+	(This may improve the "bumpy black" problem ?)
 
 *	Changed profile/colprof to generate matrix tags for Display XYZ PCS cLUT profiles,
 	to improve compatibility with other CMMs.
@@ -50,7 +69,7 @@ Version 1.1.0 RC3 (26 December 2009)
 	adaptive mode of the i1pro for display measurement.
 	This may give better low level readings ?
 
-*	Changd targen so that it doesn't slow down as badly
+*	Improved targen so that it doesn't slow down as badly
 	when a very large number of fixed points are used together
 	with full spread points.
 
