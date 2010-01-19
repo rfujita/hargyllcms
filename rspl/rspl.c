@@ -1063,13 +1063,15 @@ static int set_rspl(
 			}
 
 			for (j = 0; j < (1 << s->di); j++) { /* For corners of cube */
-				double sc = 1.0;		/* Scale factor for edge nodes */
+				double sc = 1.0;		/* Scale factor for non-edge nodes */
 
-				/* Compute averaging scale factor for edge nodes */
+				/* Don't distribute error to edge nodes since there may */
+				/* an expectation that they have precicely set values */
+				/* (ie. white and black points) */
 				for (e = 0; e < s->di; e++) {
 					if ((gc[e] == 0 && (j & (1 << e)) == 0)
 					 || (gc[e] == ((gres[e]-2)) && (j & (1 << e)) != 0))
-						sc *= 2.0;
+						sc *= 0.0;
 				}
 
 				for (f = 0; f < s->fdi; f++) { 		/* Output chans */

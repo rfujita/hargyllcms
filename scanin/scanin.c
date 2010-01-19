@@ -115,6 +115,7 @@ usage(void) {
 	fprintf(stderr,"     n                diag - sample box names\n");
 	fprintf(stderr,"     a                diag - sample box areas\n");
 	fprintf(stderr,"     p                diag - pixel areas sampled\n");
+	fprintf(stderr," -O outputfile Override the default output filename & extension.\n");
 	exit(1);
 	}
 
@@ -122,12 +123,12 @@ usage(void) {
 int main(int argc, char *argv[])
 {
 	int fa,nfa;					/* current argument we're looking at */
-	static char tiffin_name[200] = { 0 };	/* TIFF Input file name (.tif) */
-	static char datin_name[200] = { 0 };	/* Data input name (.cie/.q60) */
-	static char datout_name[200] = { 0 };	/* Data output name (.ti3/.val) */
-	static char recog_name[200] = { 0 };	/* Reference chart name (.cht) */
-	static char prof_name[200] = { 0 };		/* scanner profile name (.cht) */
-	static char diag_name[200] = { 0 };		/* Diagnostic Output (.tif) name, if used */
+	static char tiffin_name[MAXNAMEL+1] = { 0 };	/* TIFF Input file name (.tif) */
+	static char datin_name[MAXNAMEL+4+1] = { 0 };	/* Data input name (.cie/.q60) */
+	static char datout_name[MAXNAMEL+4+1] = { 0 };	/* Data output name (.ti3/.val) */
+	static char recog_name[MAXNAMEL+1] = { 0 };	/* Reference chart name (.cht) */
+	static char prof_name[MAXNAMEL+1] = { 0 };		/* scanner profile name (.cht) */
+	static char diag_name[MAXNAMEL+1] = { 0 };		/* Diagnostic Output (.tif) name, if used */
 	int verb = 1;
 	int tmean = 0;		/* Return true mean, rather than robust mean */
 	int repl = 0;		/* Replace .ti3 device values from raster file */
@@ -182,12 +183,12 @@ int main(int argc, char *argv[])
 
 			if (argv[fa][1] == '?') {
 				usage();
-			} else if (argv[fa][1] == 'v' || argv[fa][1] == 'V') {
+			} else if (argv[fa][1] == 'v') {
 				verb = 2;
 				if (na != NULL && isdigit(na[0])) {
 					verb = atoi(na);
 				}
-			} else if (argv[fa][1] == 'm' || argv[fa][1] == 'M') {
+			} else if (argv[fa][1] == 'm') {
 				tmean = 1;
 
 			} else if (argv[fa][1] == 'g') {
@@ -196,17 +197,17 @@ int main(int argc, char *argv[])
 				outo = 0;
 				colm = 0;
 
-			} else if (argv[fa][1] == 'r' || argv[fa][1] == 'R') {
+			} else if (argv[fa][1] == 'r') {
 				repl = 1;
 				outo = 0;
 				colm = 0;
 
-			} else if (argv[fa][1] == 'o' || argv[fa][1] == 'O') {
+			} else if (argv[fa][1] == 'o') {
 				repl = 0;
 				outo = 1;
 				colm = 0;
 
-			} else if (argv[fa][1] == 'c' || argv[fa][1] == 'C') {
+			} else if (argv[fa][1] == 'c') {
 				repl = 0;
 				outo = 0;
 				colm = 1;
@@ -297,6 +298,13 @@ int main(int argc, char *argv[])
 					}
 					na++;
 				}
+
+			/* Output file name */
+			} else if (argv[fa][1] == 'O') {
+				fa = nfa;
+				if (na == NULL) usage();
+				strncpy(datout_name,na,MAXNAMEL); datout_name[MAXNAMEL] = '\000';
+
 			} else 
 				usage();
 		} else
@@ -305,12 +313,13 @@ int main(int argc, char *argv[])
 
 	/* TIFF Raster input file name */
 	if (fa >= argc || argv[fa][0] == '-') usage();
-	strcpy(tiffin_name,argv[fa]);
+	strncpy(tiffin_name,argv[fa],MAXNAMEL); tiffin_name[MAXNAMEL] = '\000';
 
-	if ((flags & SI_BUILD_REF) == 0
-	     && repl == 0 && colm == 0) {	/* Not generate ref or replacing .ti3 dev */
+	if (datout_name[0] == '\000'		/* Not been overridden */
+	 && (flags & SI_BUILD_REF) == 0
+	 && repl == 0 && colm == 0) {	/* Not generate ref or replacing .ti3 dev */
 		char *xl;
-		strcpy(datout_name,argv[fa]);
+		strncpy(datout_name,argv[fa],MAXNAMEL); datout_name[MAXNAMEL] = '\000';
 		if ((xl = strrchr(datout_name, '.')) == NULL)	/* Figure where extention is */
 			xl = datout_name + strlen(datout_name);
 		if (outo == 0)	/* Creating scan calib data */
@@ -321,11 +330,11 @@ int main(int argc, char *argv[])
 
 	/* .cht Reference file in or out */
 	if (++fa >= argc || argv[fa][0] == '-') usage();
-	strcpy(recog_name,argv[fa]);
+	strncpy(recog_name,argv[fa],MAXNAMEL); recog_name[MAXNAMEL] = '\000';
 
 	if (colm > 0) {
 		if (++fa >= argc || argv[fa][0] == '-') usage();
-		strcpy(prof_name,argv[fa]);
+		strncpy(prof_name,argv[fa],MAXNAMEL); prof_name[MAXNAMEL] = '\000';
 	}
 
 	/* CGATS Data file input/output */
@@ -333,7 +342,7 @@ int main(int argc, char *argv[])
 		if (++fa >= argc || argv[fa][0] == '-') usage();
 		if (outo == 0) {	/* Creating scan calib data */
 			/* Data file */
-			strcpy(datin_name,argv[fa]);
+			strncpy(datin_name,argv[fa],MAXNAMEL); datin_name[MAXNAMEL] = '\000';
 		}
 		if (repl != 0 || colm > 0) {	/* Color from image or replacing .ti3 device data */
 			strcpy(datin_name,argv[fa]);
@@ -347,7 +356,7 @@ int main(int argc, char *argv[])
 	if (++fa < argc) {
 		if (argv[fa][0] == '-')
 			usage();
-		strcpy(diag_name,argv[fa]);
+		strncpy(diag_name,argv[fa],MAXNAMEL); diag_name[MAXNAMEL] = '\000';
 	} else {	/* Provide a default name */
 		strcpy(diag_name,"diag.tif");
 	}

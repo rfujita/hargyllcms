@@ -474,7 +474,7 @@ ipatch *vals) {		/* Pointer to array of values */
 	if (sscanf(buf," %d ", &cs) != 1)
 		return inst_protocol_error;
 	if (cs != 3) {
-		/* Seems to be no chart saved, but double check, in case of old firmware */
+		/* Seems to be no chart saved, but double check, in case of old firmware ( < 1.03) */
 		if ((ev = dtp20_command(p, "00TS\r", buf, MAX_RD_SIZE, 0.5)) != inst_ok)
 			return inst_nonesaved;
 		if (sscanf(buf," %d ", &cs) != 1)
@@ -649,8 +649,11 @@ ipatch *vals) {		/* Pointer to array of instrument patch values */
 	/* Send strip definition */
 	build_strip(p, tbuf, name, npatch, pname, sguide, pwid, gwid, twid);
 
-	if ((ev = dtp20_command(p, tbuf, buf, MAX_MES_SIZE, 1.5)) != inst_ok)
+	if ((ev = dtp20_command(p, tbuf, buf, MAX_MES_SIZE, 1.5)) != inst_ok) {
+		if (p->verb)
+			printf("Interactive strip reading won't work on Firmware earlier than V1.03 !\n");
 		return ev;
+	}
 
 	if (p->trig == inst_opt_trig_keyb_switch) {
 		int touts = 0;

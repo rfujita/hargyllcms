@@ -360,9 +360,13 @@ f:x:y&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Flare color as x,
 y<br>
 &nbsp;<a href="#P">-P</a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-Create gamut gammap_p.wrl and gammap_s.wrl diagostics<br
+Create gamut gammap_p.wrl and gammap_s.wrl diagostics<br>
+</span></small><small><span style="font-family: monospace;">&nbsp;<a
+ href="#O">-O outputfile</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Override the default output filename &amp; extension.</span></small><br
  style="font-family: monospace;">
-</span><span style="font-family: monospace;">&nbsp;</span><a
+<small><span style="font-family: monospace;"></span><span
+ style="font-family: monospace;">&nbsp;</span><a
  style="font-family: monospace;" href="#p1"><i>inoutfile</i></a><span
  style="font-family: monospace;"> &nbsp;&nbsp; &nbsp; &nbsp;
 &nbsp; &nbsp; Base name for input.ti3/output.icc file</span></small><br>
@@ -969,12 +973,21 @@ into the device gamut. <br>
 <b><a name="P"></a></b>The <b>-P</b> option causes diagnostic 3D <a
  href="File_Formats.html#VRML">VRML</a> plots to be created that
 illustrate the gamut mappings generated for the perceptual and
-saturation intent tables.<span style="font-weight: bold;"></span><br>
+saturation intent tables.<br>
+<br>
+<a name="O"></a>The <span style="font-weight: bold;">-O</span>
+parameter allows the
+output file name &amp; extension to be specified independently of the
+last tiff
+filename. Note that the full filename must be specified, including the
+extension.<span style="font-weight: bold;"></span><br>
 <br>
 <a name="p1"></a> The final parameter is the file base name for the <a
  href="File_Formats.html#.ti3">.ti3</a> input test point data, and the
 resulting <a href="File_Formats.html#ICC">ICC</a> output profile (.icm
-extension on the MSWindows platform, .icc on Apple or Unix platforms).<br>
+extension on the MSWindows platform, .icc on Apple or Unix platforms).
+The <span style="font-weight: bold;">-O</span>
+parameter will override this default.
 <h3>Discussion</h3>
 Note that monochrome profiling isn't currently supported. It may be
 supported sometime in the future.<br>

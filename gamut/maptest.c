@@ -192,15 +192,15 @@ main(int argc, char *argv[]) {
 
 	map = new_gammap(
 		verb,
-		gin,		/* Source gamut */
-		gimg,		/* Image gamut */
-		gout,		/* Destination gamut */
+		gin,			/* Source gamut */
+		gimg,			/* Image gamut */
+		gout,			/* Destination gamut */
 		&gmi,
-		0, 0, 		/* Normal black points */
-		0,			/* Normal CMY cusp mapping */
-		0,			/* No relative weighting override */
-		17,			/* rspl resolution of 17 */
-		NULL,		/* No input range override */
+		0, 0, 			/* Normal black points */
+		0,				/* Normal CMY cusp mapping */
+		0,				/* No relative weighting override */
+		17,				/* rspl resolution of 17 */
+		NULL,			/* No input range override */
 		NULL,
 		"gammap.wrl"	/* Diagnostic plot */
 	);

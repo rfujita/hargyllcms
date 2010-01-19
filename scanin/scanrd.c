@@ -2338,7 +2338,7 @@ elist *el
 ) {
 	int i, rc = el->c;
 	
-	DBG((dbgo,"Elist has %d entries allocated at 0x%x\n",el->c,(unsigned int)el->a));
+	DBG((dbgo,"Elist has %d entries allocated at 0x%x\n",el->c,(unsigned long)el->a));
 	DBG((dbgo,"lennorm = %f\n",el->lennorm));
 	for (i = 0; i < rc; i++)
 		DBG((dbgo,"  [%d] = %f %f %f\n",i,el->a[i].pos,el->a[i].len,el->a[i].ccount));

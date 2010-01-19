@@ -3788,7 +3788,7 @@ static void usage(char *diag, ...) {
 	fprintf(stderr," -G filename          Display RGB colors from CGATS file\n");
 	fprintf(stderr," -m                   Manually cycle through values\n");
 	fprintf(stderr," -f                   Test grey ramp fade\n");
-	fprintf(stderr," -r                   Test just Video LUT loading\n");
+	fprintf(stderr," -r                   Test just Video LUT loading & Beeps\n");
 	fprintf(stderr," -n                   Test native output (rather than through Video LUT)\n");
 	fprintf(stderr," -s filename          Save the currently loaded Video LUT to 'filename'\n");
 	fprintf(stderr," -c                   Load a linear display calibration\n");

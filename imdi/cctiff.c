@@ -562,7 +562,7 @@ struct _profinfo {
 	icmLuAlgType alg;					/* Type of lookup algorithm used */
 	int clutres;						/* If this profile uses a clut, what's it's res. ? */
 	icColorSpaceSignature natpcs;		/* Underlying natural PCS */
-	icmLuBase *luo;				/* Base Lookup type object */
+	icmLuBase *luo;						/* Base Lookup type object */
 
 }; typedef struct _profinfo profinfo;
 
@@ -571,7 +571,8 @@ typedef struct {
 	/* Overall parameters */
 	int verb;				/* Non-zero if verbose */
 	icColorSpaceSignature ins, outs;	/* Input/Output spaces */
-	int id, od;				/* Input/Output dimensions */
+	int id, od, md;			/* Input/Output dimensions and max(id,od) */
+	int width, height;		/* Width and heigh of raster */
 	int isign_mask;			/* Input sign mask */
 	int osign_mask;			/* Output sign mask */
 	int icombine;			/* Non-zero if input curves are to be combined */
@@ -749,20 +750,21 @@ double *in_vals
 	/* If the output curves are being combined into clut: */
 	if (rx->ocombine != 0) {
 
+		/* Any concatinated output calibrations */
+		for (j = rx->lclut+1; j <= rx->last; j++) {
+			if (rx->profs[j].func == icmFwd)
+				rx->profs[j].cal->interp(rx->profs[j].cal, vals, vals);
+			else
+				rx->profs[j].cal->inv_interp(rx->profs[j].cal, vals, vals);
+		}
+//printf("~1 md_table after out cals %f %f %f %f\n",vals[0],vals[1],vals[2],vals[3]);
+
 		/* Any needed TIFF file format conversion */
 		if (rx->ocvt != NULL) {
 			rx->ocvt(vals, vals);
 //printf("~1 md_table after out ocvt %f %f %f %f\n",vals[0],vals[1],vals[2],vals[3]);
 		}
 
-		/* Any concatinated output calibrations */
-		for (j = rx->lclut+1; j <= rx->last; j++) {
-			if (rx->profs[i].func == icmFwd)
-				rx->profs[j].cal->interp(rx->profs[j].cal, vals, vals);
-			else
-				rx->profs[j].cal->inv_interp(rx->profs[j].cal, vals, vals);
-		}
-//printf("~1 md_table after out cals %f %f %f %f\n",vals[0],vals[1],vals[2],vals[3]);
 	}
 
 	for (i = 0; i < rx->od; i++)
@@ -867,7 +869,9 @@ main(int argc, char *argv[]) {
 	icmLookupFunc next_func;				/* Direction for next calibration */
 	int last_dim;							/* Next dimentionality between conversions */
 	icColorSpaceSignature last_colorspace;	/* Next colorspace between conversions */
-	int slow = 0;			/* Slow and precice (float) */
+	char *last_cs_file;		/* Name of the file the last colorspace came from */
+	int doimdi = 1;			/* Use the fast overall integer conversion */
+	int dofloat = 0;		/* Use the slow precice (float). */
 	int check = 0;			/* Check fast (int) against slow (float) */
 	int ochoice = 0;		/* Output photometric choice 1..n */
 	int alpha = 0;			/* Use alpha for extra planes */
@@ -884,14 +888,14 @@ main(int argc, char *argv[]) {
 	float resx, resy;
 	uint16 pconfig;								/* Planar configuration */
 
-	uint16 rsamplesperpixel, wsamplesperpixel;	/* Bits per sample */
+	uint16 rsamplesperpixel, wsamplesperpixel;	/* Channels per sample */
 	uint16 rphotometric, wphotometric;			/* Photometrics */
 	uint16 rextrasamples, wextrasamples;		/* Extra "alpha" samples */
 	uint16 *rextrainfo, wextrainfo[MAX_CHAN];	/* Info about extra samples */
 	char *rdesc = NULL;							/* Existing description */
 	char *wdesc = "[ Color corrected by ArgyllCMS ]";	/* New description */
 
-	tdata_t *inbuf, *outbuf, *precbuf = NULL;
+	tdata_t *inbuf = NULL, *outbuf = NULL, *precbuf = NULL;
 
 	/* IMDI */
 	imdi *s = NULL;
@@ -941,9 +945,10 @@ main(int argc, char *argv[]) {
 			if (argv[fa][1] == '?')
 				usage("Usage requested");
 
-			/* Slow, Precise */
+			/* Slow, Precise, not integer */
 			else if (argv[fa][1] == 'p' || argv[fa][1] == 'P') {
-				slow = 1;
+				doimdi = 0;
+				dofloat = 1;
 			}
 
 			/* Combine per channel curves */
@@ -954,6 +959,8 @@ main(int argc, char *argv[]) {
 
 			/* Check curves */
 			else if (argv[fa][1] == 'k' || argv[fa][1] == 'K') {
+				doimdi = 1;
+				dofloat = 1;
 				check = 1;
 			}
 
@@ -1098,6 +1105,9 @@ main(int argc, char *argv[]) {
 	su.fclut = su.first = 0;
 	su.lclut = su.last = su.nprofs-1;
 
+	if (check && (!doimdi || !dofloat))
+		error("Can't do check unless both integera and float processing are enabled");
+
 /*
 
 	Logic required:
@@ -1182,6 +1192,10 @@ main(int argc, char *argv[]) {
 
 	last_dim = su.id;
 	last_colorspace = su.ins;
+	last_cs_file = in_name;
+
+	su.width = width;
+	su.height = height;
 
 	/* - - - - - - - - - - - - - - - */
 	/* Check and setup the sequence of ICC profiles */
@@ -1271,13 +1285,15 @@ main(int argc, char *argv[]) {
 
 		/* Check that we can join to previous correctly */
 		if (!ignoremm && !CSMatch(last_colorspace, su.profs[i].ins))
-			error("Last colorspace %s doesn't match input space %s of profile %s",
+			error("Last colorspace %s from file '%s' doesn't match input space %s of profile %s",
 		      icm2str(icmColorSpaceSignature,last_colorspace),
-				      icm2str(icmColorSpaceSignature,su.profs[i].h->colorSpace),
-				      su.profs[i].name);
+			  last_cs_file,
+			  icm2str(icmColorSpaceSignature,su.profs[i].h->colorSpace),
+			  su.profs[i].name);
 
 		last_dim = icmCSSig2nchan(su.profs[i].outs);
 		last_colorspace = su.profs[i].outs;
+		last_cs_file = su.profs[i].name; 
 	}
 	
 	su.od = last_dim;
@@ -1305,6 +1321,8 @@ main(int argc, char *argv[]) {
 	}
 		
 //printf("~1 first = %d, fclut = %d, lclut = %d, last = %d\n", su.first, su.fclut, su.lclut, su.last);
+
+	su.md = su.id > su.od ? su.id : su.od;
 
 	/* - - - - - - - - - - - - - - - */
 	/* Open up the output TIFF file for writing */
@@ -1532,9 +1550,17 @@ main(int argc, char *argv[]) {
 	/* - - - - - - - - - - - - - - - */
 	/* Setup the imdi */
 
-	{
-		int aclutres = 0;	/* Automatically set res */
+	if (check)
+		doimdi = dofloat = 1;
 
+	if (doimdi && su.nprofs > 0) {
+		int aclutres = 0;	/* Automatically set res */
+		imdi_options opts = opts_none;
+	
+		if (rextrasamples > 0) {		/* We need to skip the alpha */
+			opts |= opts_istride;
+		}
+	
 		/* Setup the imdi resolution */
 		/* Choose the resolution from the highest lut resolution in the sequence, */
 		/* or choose a default. */
@@ -1552,18 +1578,10 @@ main(int argc, char *argv[]) {
 
 		if (clutres == 0)
 			clutres = aclutres;
-	}
 
-	if (su.verb && su.nprofs > 0)
-		printf("Using CLUT resolution %d\n",clutres);
-
-	if (!slow && su.nprofs > 0) {
-		imdi_options opts = opts_none;
-
-		if (rextrasamples > 0) {		/* We need to skip the alpha */
-			opts |= opts_istride;
-		}
-
+		if (su.verb)
+			printf("Using CLUT resolution %d\n",clutres);
+	
 		s = new_imdi(
 			su.id,			/* Number of input dimensions */
 			su.od,			/* Number of output dimensions */
@@ -1600,20 +1618,17 @@ main(int argc, char *argv[]) {
 		}
 	}
 
+	inbuf  = _TIFFmalloc(TIFFScanlineSize(rh));
+	outbuf = _TIFFmalloc(TIFFScanlineSize(wh));
+	inp[0] = (unsigned char *)inbuf;
+	outp[0] = (unsigned char *)outbuf;
+	if (dofloat || su.nprofs == 0)
+		precbuf = _TIFFmalloc(TIFFScanlineSize(wh));
+
+
 	/* - - - - - - - - - - - - - - - */
 	/* Process colors to translate */
 	/* (Should fix this to process a group of lines at a time ?) */
-
-	if (check)
-		slow = 0;
-
-	inbuf  = _TIFFmalloc(TIFFScanlineSize(rh));
-	outbuf = _TIFFmalloc(TIFFScanlineSize(wh));
-	if (slow || check || su.nprofs == 0)
-		precbuf = _TIFFmalloc(TIFFScanlineSize(wh));
-
-	inp[0] = (unsigned char *)inbuf;
-	outp[0] = (unsigned char *)outbuf;
 
 	for (y = 0; y < height; y++) {
 
@@ -1621,13 +1636,13 @@ main(int argc, char *argv[]) {
 		if (TIFFReadScanline(rh, inbuf, y, 0) < 0)
 			error ("Failed to read TIFF line %d",y);
 
-		if (!slow && su.nprofs > 0) {
+		if (doimdi && su.nprofs > 0) {
 			/* Do fast conversion */
 			s->interp(s, (void **)outp, 0, (void **)inp, rsamplesperpixel, width);
 		}
 		
-		if (slow || check || su.nprofs == 0) {
-			/* Do floating point conversion */
+		if (dofloat || su.nprofs == 0) {
+			/* Do floating point conversion into the precbuf[] */
 			for (x = 0; x < width; x++) {
 				int i;
 				double in[MAX_CHAN], out[MAX_CHAN];
@@ -1717,7 +1732,7 @@ main(int argc, char *argv[]) {
 			}
 		}
 			
-		if (slow || su.nprofs == 0) {	/* Use the results of the f.p. conversion */
+		if (dofloat || su.nprofs == 0) {	/* Use the results of the f.p. conversion */
 			if (TIFFWriteScanline(wh, precbuf, y, 0) < 0)
 				error ("Failed to write TIFF line %d",y);
 		} else {
@@ -1736,10 +1751,10 @@ main(int argc, char *argv[]) {
 			       mxerr/655.35, avgerr/(655.35 * avgcount));
 	}
 
-	_TIFFfree(inbuf);
-	_TIFFfree(outbuf);
-	if (check)
-		_TIFFfree(precbuf);
+
+	if (inbuf != NULL) _TIFFfree(inbuf);
+	if (outbuf != NULL) _TIFFfree(outbuf);
+	if (precbuf != NULL) _TIFFfree(precbuf);
 
 	/* Done with lookup object */
 	if (s != NULL)
@@ -1750,11 +1765,11 @@ main(int argc, char *argv[]) {
 
 	/* Free up all the profiles etc. in the sequence. */
 	for (i = 0; i < su.nprofs; i++) {
-		if (su.profs[i].c != NULL) {
-			su.profs[i].luo->del(su.profs[i].luo);
-			su.profs[i].c->del(su.profs[i].c);
+		if (su.profs[i].c != NULL) {				/* Has an ICC profile */
+			su.profs[i].luo->del(su.profs[i].luo);	/* Lookup */
+			su.profs[i].c->del(su.profs[i].c);	
 		} else {
-			su.profs[i].cal->del(su.profs[i].cal);
+			su.profs[i].cal->del(su.profs[i].cal);	/* Calibration */
 		}
 	}
 

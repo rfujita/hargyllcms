@@ -550,7 +550,8 @@ should be used, and there will be a ColorCheckerDC reference
 file supplied by X-Rite/GretagMacbeth with the chart.<br>
 <br>
 The ColorChecker SG is relatively expensive, but is preferred by many
-people because its colors are composed of multiple different pigments,
+people because (like the ColorChecker and ColorCheckerDC) its colors
+are composed of multiple different pigments,
 giving it reflective spectra that are more representative of the real
 world, unlike many other charts that are created out of combination of
 3 or 4 colorants.<br>
@@ -560,8 +561,8 @@ manufacturer doesn't
 provide any CIE reference information for it, making it relatively
 useless for creating profiles unless you are using X-Rite software to
 do so. [There was a suggestion in December 2009 That X-Rite will
-address this problem by making the reference information available on
-their Website, but at the time of writing, this hasn't happened yet.]<br>
+address this issue by making the reference information available on
+their Website, but at the time of writing, this hasn't happened yet]<br>
 If you do happen to have access to the ColorChecker SG reference
 information, or you have measured it yourself using a color instrument,<br>
 then you may need to convert the reference information from spectral <span
@@ -620,7 +621,8 @@ follows
 <br>
 <a href="scanin.html"> scanin</a> -v scanner.tif It8.cht It8ref.txt<br>
 <br>
-"It8ref.txt" is assumed to be the name of the CIE reference file
+"It8ref.txt" or "It8ref.cie" is assumed to be the name of the CIE
+reference file
 supplied by the chart manufacturer. The resulting file will be named "<b>scanner.ti3</b>".<br>
 <br>
 <span style="font-weight: bold;">scanin</span> will process 16 bit per
@@ -1722,12 +1724,13 @@ other programs and systems, Argyll provides the utility <a
  href="cctiff.html">cctiff</a> for directly applying a device to device
 transform to a <a href="File_Formats.html#TIFF">TIFF</a> raster file.
 The cctiff utility is capable of linking an arbitrary sequence of
-device profiles, device links and abstract profiles. Each device
+device profiles, device links, abstract profiles and calibration
+curves. Each device
 profile can be preceded by the <span style="font-weight: bold;">-i</span>
 option to indicate the intent that should be used. Both 8 and 16 bit
 per component files
 can be handled, and up to 8 color channels. The color transform is
-optimized to perform the transformation rapidly.<br>
+optimized to perform the overall transformation rapidly.<br>
 <br>
 If a device link is to be used, the following is a typical example:<br>
 <br>

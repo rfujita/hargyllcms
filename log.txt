@@ -2,25 +2,59 @@
 Argyll CMS change log
 =====================
 
-Version 1.1.0 RC4 
+Version 1.1.0 (17th January 2010)
+-------------
+
+*	Added some warnings to colprof for strange combinations
+	of -s -S and -t -T and -g.
+
+*	Fixed problem in perceptual gamut mapping that resulting in
+	less deep blacks than desirable. Also tweaked gamut mapping
+	to try and maintain luminance gradation near black
+	for chromatic colors.
+
+*	Simplified the Linux instalation instructions, particularly
+	with regard to USB and serial permissions. Permissions use groups now,
+	or ACL if it is available.
+
+*	Added working MSWindows 64 bit libusb drivers, which will work
+	on Vista 64 and MSWindows 7 64 bit. Because of
+	Microsofts driver signing requirements though, they won't be
+	usable unless a driver code signing workaround is used.
+
+*	Fixed viewgam so that the number of gamuts that can be
+	viewed is unlimited. Also added error when computing intersecting
+	volume if the two gamuts are incompatible.
+
+*	Added -O option to scanin and colprof, to allow overriding the
+	default output filename/location.
+
+*	There was a regression in the black inking fixes, the K target
+    was corresponding to the pre-1D Lut values, this is now fixed.
+
+*	Fixed another glitch in rspl/rev.c when computing black solution -
+	the auxiliary target was not always the closest one possible.
+	This fix may also help smoothness near black.
+
+Version 1.1.0 RC4 (6th January 2010) 
 -----------------
 
-*	Fixed bug in xicclu -pz that caused maximum rather than
-	minimum ink. Also fixed tollerance glitch in rspl/rev.c that was causing
-	non-exact black values to be returned.
+*	Fixed bug in xicclu -pz that caused maximum rather than minimum ink. Also
+    fixed tolerance glitch in rspl/rev.c that was causing non-exact black
+    values to be returned.
 
 *	Changed printtarg so that the TIFF output has the paper margin subtracted
 	from it. This is so that the resulting TIFF can be placed on that sized paper
 	without clipping or scaling. Set the margin to zero to get a TIFF that
 	exactly fits into the specified paper size.
 
-*	Fixed bug in colprof -aX which caused crash when there is calibration
+*	Fixed bug in colprof -aX which caused crash when there are calibration
 	curves.
 
-*	Fixed bug in printcal, changed first -n to -d to distinguish it
-	from second -n paramater.
+*	Fixed bug in printcal, changed first -n option to -d to distinguish it
+	from second -n parameter.
 
-Version 1.1.0 RC3 (4th January 2009) 
+Version 1.1.0 RC3 (4th January 2010) 
 -----------------
 
 *	Fixed bug in Linux profile uninstall (dispwin -U)

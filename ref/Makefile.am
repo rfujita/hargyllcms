@@ -12,6 +12,10 @@ ref_DATA =						\
 	ColorCheckerSG.cht				\
 	ColorChecker.ti2				\
 	ColorChecker.cie				\
+	CMP_Digital_Target-3.cht			\
+	D50_0.1.sp					\
+	LaserSoftDCPro.cht				\
+	QPcard_201.cie					\
 	D50_0.0.sp					\
 	D50_0.3.sp					\
 	D50_0.5.sp					\

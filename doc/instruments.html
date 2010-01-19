@@ -179,7 +179,7 @@ layout, the strip may be scanned
 from either direction. If a randomized chart layout has not been used
 for the <span style="font-weight: bold;">Eye-One Pro</span> or <span
  style="font-weight: bold;">ColorMunki</span>, then the chart should
-only be read in the one direction (<a href="chartread.html#B">chartread
+only be read in the one direction (use <a href="chartread.html#B">chartread
 -B</a>).<br>
 <br>
 Note
@@ -270,11 +270,12 @@ forward to the next unread strip. When you are finished, use the <span
 You can choose to finish before all the strips are read, and the
 patches that have been read will be saved to the .ti3 file. This is
 useful if you are unable to read a particular strip successfully, or if
-you are unable to finish the chart in one session, and you can <span
+you are unable to finish the chart in one session, and you can later <span
  style="text-decoration: underline;">resume</span> reading the chart by
 using the <span style="font-weight: bold;">chartread -r</span> flag.
 [You could resume reading the chart patch by patch using the <span
- style="font-weight: bold;">chartread -r -p</span>.]<br>
+ style="font-weight: bold;">chartread -r -p</span> if you are unable to
+read a strip successfully.]<br>
 <br>
 You can abort the whole process at any time by hitting Escape, and the
 readings will not be saved.<br>
@@ -378,7 +379,7 @@ to indicate that you are done. You can choose to finish before all the
 patches are read, and they will be saved to
 the .ti3 file. This is useful if you are unable to finish the chart in
 one
-session, and you can <span style="text-decoration: underline;">resume</span>
+session, and you can later <span style="text-decoration: underline;">resume</span>
 reading the chart by using the <span style="font-weight: bold;">chartread
 -r</span> flag.<br>
 <br>
@@ -689,7 +690,9 @@ is calibrated at the exact integration time used.<br>
 The spotread -e or -a modes are adaptive, so the range of brightness is
 much greater, but the measurement time will be variable, and the dark
 level<br>
-is interpolated.<br>
+is interpolated. The adapative mode can be used with dispcal and
+dispread by using the -V flag, and this may give better results for
+displays capable of very deep blacks.<br>
 <br>
 <span style="font-weight: bold;">Special features:</span><br>
 <br>

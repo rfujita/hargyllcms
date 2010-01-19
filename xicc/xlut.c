@@ -39,7 +39,6 @@
 #undef WARN_CLUT_CLIPPING		/* [Undef] Print warning if setting clut clips */
 #undef DISABLE_KCURVE_FILTER	/* [Undef] don't filter the Kcurve */
 
-
 #define SHP_SMOOTH 1.0	/* Input shaper curve smoothing */
 #define OUT_SMOOTH1 1.0	/* Output shaper curve smoothing for L*, X,Y,Z */
 #define OUT_SMOOTH2 1.0	/* Output shaper curve smoothing for a*, b* */
@@ -338,7 +337,7 @@ double *cdirv		/* Space for returned clip vector */
 int icxLuLut_inv_out_abs(icxLuLut *p, double *out, double *in) {
 	int rv = 0;
 
-	DBR(("icxLuLut_inv_out_abs got PCS %s\n",ppos(p->outputChan, in)));
+	DBR(("\nicxLuLut_inv_out_abs got PCS %s\n",ppos(p->outputChan, in)));
 
 	if (p->mergeclut == 0) {
 		if (p->outs == icxSigJabData) {
@@ -579,6 +578,7 @@ double *in
 /* helper function that creates our standard K locus curve value, */
 /* given the curve parameters, and the normalised L 0.0 - 1.0 value. */
 /* No filtering version. */
+/* !!! Should add K limit in here so that smoothing takes it into account !!! */
 static double icxKcurveNF(double L, icxInkCurve *c) {
 	double rv;
 	int refl = 0;
@@ -590,7 +590,8 @@ static double icxKcurveNF(double L, icxInkCurve *c) {
 		L = -L;
 		refl = 1;
 	} else if (L > 1.0) {
-		L = 2.0 - L;
+//		L = 2.0 - L;
+		L = 1.0;
 		refl = 2;
 	}
 
@@ -649,7 +650,8 @@ static double icxKcurveNF(double L, icxInkCurve *c) {
 	if (refl == 1) {
 		rv = 2.0 * c->Kenle - rv;
 	} else if (refl == 2) {
-		rv = 2.0 * c->Kstle - rv;
+//		rv = 2.0 * c->Kstle - rv;
+		rv = c->Kstle;
 	}
 
 	DBK(("Returning %f\n",rv));
@@ -784,6 +786,20 @@ double *in		/* Function input values to invert (== clut output' values) */
 #endif
 
 		} else {  /* Got a valid locus */
+
+			/* Convert the locuses from input' -> input space */
+			for (e = 0; e < p->clutTable->di; e++) {
+				co tc;
+				/* (Is speed more important than precision ?) */
+				if (p->auxm[e] != 0) {
+					tc.p[0] = min[e];
+					p->revinputTable[e]->interp(p->revinputTable[e], &tc);
+					min[e] = tc.v[0];
+					tc.p[0] = max[e];
+					p->revinputTable[e]->interp(p->revinputTable[e], &tc);
+					max[e] = tc.v[0];
+				}
+			}
 
 			if (auxr != NULL) {		/* Report the locus range */
 				int ee = 0;
@@ -935,6 +951,23 @@ double *in		/* Function input values to invert (== clut output' values) */
 						}
 					}
 					DBR(("inv_clut_aux: aux %f from 2 curves\n",pp[0].p[3]))
+				}
+			}
+
+			/* Convert to input/dev aux target to input'/dev' space for rspl inversion */
+			for (e = 0; e < p->clutTable->di; e++) {
+				double tv, bv = 0.0, bd = 1e6;
+				co tc;
+				if (p->auxm[e] != 0)  {
+					tv = pp[0].p[e];
+					/* Clip to overall locus range (belt and braces) */
+					if (tv < min[e])
+						tv = min[e];
+					if (tv > max[e])
+						tv = max[e];
+					tc.p[0] = tv;
+					p->inputTable[e]->interp(p->inputTable[e], &tc);
+					pp[0].p[e] = tc.v[0];
 				}
 			}
 

@@ -45,6 +45,7 @@
 # define DBG(xx)	fprintf(errout, xx )
 # define DBGF(xx)	fprintf xx
 #else
+# define errout stderr
 # define DBG(xx)
 # define DBGF(xx)
 #endif
@@ -232,7 +233,8 @@ icoms *p
 		char *dirn = "/dev/";
 	
 		if ((dd = opendir(dirn)) == NULL) {
-			DBGF((errout,"failed to open directory \"%s\"\n",dirn));
+//			DBGF((errout,"failed to open directory \"%s\"\n",dirn));
+			if (p->debug) fprintf(errout,"failed to open directory \"%s\"\n",dirn);
 			return p->paths;
 		}
 
@@ -258,10 +260,12 @@ icoms *p
 			strcat(dpath, de->d_name);
 
 			if ((fd = open(dpath, O_RDWR | O_NOCTTY )) < 0) {
+				if (p->debug) fprintf(errout,"failed to open serial \"%s\"\n",dpath);
 				free(dpath);
 				continue;
 			}
 			close(fd);
+			if (p->debug) fprintf(errout,"managed to open serial \"%s\"\n",dpath);
 
 			/* Add the path to the list */
 			if (p->paths == NULL) {

@@ -2134,7 +2134,8 @@ make_output_icc(
 
 					/* setup perceptual gamut mapping */
 					cx.pmap = new_gammap(verb, csgamp, igam, ogam, pgmi, 0, 0, 0, 0, mapres,
-					                     NULL, NULL, gamdiag ? "gammap_p.wrl" : NULL);
+					                     NULL, NULL, gamdiag ? "gammap_p.wrl" : NULL
+					);
 					if (cx.pmap == NULL)
 						error ("Failed to make perceptual gamut map transform");
 
@@ -2147,7 +2148,8 @@ make_output_icc(
 					if (sepsat) {
 						/* setup saturation gamut mapping */
 						cx.smap = new_gammap(verb, csgams, igam, ogam, sgmi, 0, 0, 0, 0, mapres,
-						                     NULL, NULL, gamdiag ? "gammap_s.wrl" : NULL);
+						                     NULL, NULL, gamdiag ? "gammap_s.wrl" : NULL
+						);
 						if (cx.smap == NULL)
 							error ("Failed to make saturation gamut map transform");
 

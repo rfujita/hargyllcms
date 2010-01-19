@@ -17,6 +17,9 @@
 
 	TTBD:
 
+	Add an option that allows including a scale gauge, to detect
+	accidental re-scaling.
+
 */
 
 /* This program generates a PostScript or TIFF print target file, */

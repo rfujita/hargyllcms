@@ -11,9 +11,9 @@
 </head>
 <body>
 <h1>
-Argyll CMS documentation index (V1.1.0 RC3)<br>
+Argyll CMS documentation index (V1.1.0)<br>
 </h1>
-Date:&nbsp;&nbsp; 6th. January 2010
+Date:&nbsp;&nbsp; 16th. January 2010
 <br>
 Author: Graeme Gill
 <h2><u><a name="Intro"></a>Introduction</u></h2>
@@ -41,7 +41,7 @@ Device color gamuts can also be viewed and compared using a VRML
 viewer. Comprehensive documentation is provided for each utility, and a
 general guide to using the tools for typical color management tasks is
 also available. A mailing list provides support for more advanced usage.<br>
-<p>This is Version 1.1.0 RC4, a feature and bug fix release
+<p>This is Version 1.1.0, a feature and bug fix release
 following the V1.0.4 release on 30th June 2009. The first public
 release of icclib was in November 1998, and of Argyll
 was in July 2000. Code
@@ -73,8 +73,9 @@ Platform SDK Feb. 2003<br>
 <br>
 It is also known to run on:<br>
 <br>
-&nbsp;MSWindows 2000, XP &amp; Vista<br>
-&nbsp;MSWindows Vista 64 (But most USB instruments won't work)<br>
+&nbsp;MSWindows 2000, XP, Vista &amp; Windows 7 32 bit.<br>
+&nbsp;MSWindows Vista 64bit &amp; Windows 7 64bit (But a code signing
+workaround is needed to make USB instruments accessible.)<br>
 &nbsp;Linux Ubuntu 7.10<br>
 &nbsp;Linux Kubuntu 7.10<br>
 &nbsp;Linux Mandriva 2008.0<br>
@@ -338,8 +339,8 @@ This is essentially my private project, that I've made available under
 GNU licensing conditions. Because I license my code under other
 licenses as well, there is a limit to what I will accept in the way of
 code contributions back into this project. For me to accept
-contributions into this distribution, it either has to be a
-non-core side
+contributions into the distribution, it either has to be a
+non-core (side)
 project, or has to be offered to me with copyright conditions that are
 compatible with my other uses (i.e.. a "BSD" like license, or assigning
 or licensing
@@ -436,8 +437,18 @@ for each source profile type. Similarly the device profiles could be
 stored
 in a hierarchy of directories ordered by device type, media,
 resolution,
-device mode etc.
-<br>
+device mode etc. Naturally you will want to set your $PATH so that you
+can run the tools from whichever directory you are in, as well as
+specify any necessary directory paths for file arguments so that the
+tools are able to open them.<br>
+</p>
+<p>Note that there are two ways the Argyll utilities deal with filename
+extensions. In one you supply the extension (ie. you supply the whole
+file name), so the extension is up to you. In the other (used where one
+name is used for input and output
+files, or where there are multiple output files), the program adds the
+extension. In the documentation this should be indicated by calling it
+a "base name".<br>
 </p>
 <p><a name="cltutes"></a>Those unfamiliar with command line
 environments

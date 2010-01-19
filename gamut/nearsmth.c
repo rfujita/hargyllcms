@@ -63,8 +63,8 @@
 						/* if  > 1, print information about everything */
 #undef SHOW_NEIGB_WEIGHTS		/* Show the weighting for each point of neighbours */
 
-#define LIGHT_L 80.0	/* "light" L/J value */
-#define DARK_L  30.0	/* "dark" L/J value */
+#define LIGHT_L 70.0	/* "light" L/J value */
+#define DARK_L  5.0		/* "dark" L/J value */
 #define NEUTRAL_C  20.0	/* "neutral" C value */
 #define NO_TRIALS 6		/* Number of random trials */
 //#define MAXITTERS 10	/* Number of relative error itterations */
@@ -391,6 +391,7 @@ void interp_xweights(gamut *gam, gammapweights *out, double pos[3], gammapweight
 		uw = 1.0;
 	else if (uw < 0.0)
 		uw = 0.0;
+	uw = uw * uw * (3.0 - 2.0 * uw);	/* Apply spline to smooth interpolation */
 	lw = (1.0 - uw);
 	near_wblend(out, &dark, lw, &light, uw);
 }
@@ -1917,9 +1918,9 @@ double m21fsm		/* Inverse 3D RSPL smoothing level, 0.0 = none */
 	/* Show just the closest vectors */
 	for (i = 0; i < nmpts; i++) {		/* Move all the points */
 //		icmCpy3(smp[i].dv, smp[i].drv);			/* Radial */
-//		icmCpy3(smp[i].dv, smp[i].aodv);		/* Nearest */
+		icmCpy3(smp[i].dv, smp[i].aodv);		/* Nearest */
 //		icmCpy3(smp[i].dv, smp[i].nsdv);		/* No smoothed weighted */
-		icmCpy3(smp[i].dv, smp[i].dv);			/* pre-filter smooothed */
+//		icmCpy3(smp[i].dv, smp[i].dv);			/* pre-filter smooothed */
 		smp[i].dr = icmNorm33(smp[i].dv, smp[i].dgam->cent);
 	}
 #else
@@ -1972,7 +1973,7 @@ double m21fsm		/* Inverse 3D RSPL smoothing level, 0.0 = none */
 				dand = dand/sand;
 //			dand = pow(dand, 0.8);				/* Don't do full scaling */
 
-#define FPOW 1.0
+//#define FPOW 1.0
 
 			/* Compute filtered value */
 			anv[0] = anv[1] = anv[2] = 0.0;
@@ -2039,7 +2040,7 @@ double m21fsm		/* Inverse 3D RSPL smoothing level, 0.0 = none */
 
 #ifdef NEVER
 	/* Use just the smoothed target */
-	for (i = 0; i < nmpts; i++) {		/* Move all the points */
+	for (i = 0; i < nmpts; i++) {			/* Move all the points */
 		icmCpy3(smp[i].dv, smp[i].anv);		/* No smoothed weighted */
 		smp[i].dr = icmNorm33(smp[i].dv, smp[i].dgam->cent);
 	}

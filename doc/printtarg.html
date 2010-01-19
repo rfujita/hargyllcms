@@ -471,7 +471,10 @@ this problem. (Note that
 the number of patches per page may be reduced as a consequence.)
 Decreasing the margin below 6 mm may be possible for printers that have
 smaller or no margins, increasing the number of patches possible on
-each page.<br>
+each page. A TIFF chart will be the size of the paper minus the margin,
+so that it
+can be placed on a page that size without cropping or inadvertent
+scaling.<br>
 <br>
 <a name="P"></a> The <b>-P</b> flag disables any normal limiting of
 strip length that would normally be imposed due to guide or instrument
@@ -486,10 +489,14 @@ Eye-One Pro).<br>
 <br>
 <a name="p"></a> The <b>-p</b> parameter specifies the paper size. The
 size can either be one of the default sizes, <a name="pp"></a>or can
-be specified in millimetres. limitations of the instrument may limit
+be specified in millimeters. limitations of the instrument may limit
 the maximum number of patches in a strip. For SpectroScan, a size of
 &nbsp;A4 or Letter (or smaller) should be used. Useful combinations of
-number of patches and paper size are listed <a href="targen.html#Table">here</a>.<br>
+number of patches and paper size are listed <a href="targen.html#Table">here</a>.
+The printed parts of the chart will be the size of paper minus the page
+margin. A TIFF chart will be the size of the paper minus the margin, so
+that it can be placed on a page that size without cropping or
+inadvertent scaling.<br>
 <br>
 <a name="p1"></a><i>basename</i> is the base file name of the&nbsp;<a
  href="File_Formats.html#.ti1">.ti1</a> file that contains the device

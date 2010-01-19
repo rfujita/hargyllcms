@@ -121,7 +121,7 @@ typedef struct {
 } icxInkCurve;
 
 /* Default black generation smoothing value */
-#define ICXINKDEFSMTH 0.10
+#define ICXINKDEFSMTH 0.20
 #define ICXINKDEFSKEW 2.0	/* Curve shape skew (matches typical device behaviour) */
 
 /* Structure to convey inking details */

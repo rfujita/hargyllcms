@@ -853,13 +853,13 @@ main(int argc, char *argv[]) {
 			in[0] = ival * end[0] + (1.0 - ival) * start[0];
 			in[1] = ival * end[1] + (1.0 - ival) * start[1];
 			in[2] = ival * end[2] + (1.0 - ival) * start[2];
+//in[1] = in[2] = 0.0;
 
-in[1] = in[2] = 0.0;
 			/* Do the conversion */
 			if (invert) {
 				if ((rv = luo->inv_lookup(luo, out, in)) > 1)
 					error ("%d, %s",xicco->errc,xicco->err);
-//printf("~1 %f %f %f -> %f %f %f %f\n", in[0], in[1], in[2], out[0], out[1], out[2], out[3]);
+//printf("~1 %f: %f %f %f -> %f %f %f %f\n", ival, in[0], in[1], in[2], out[0], out[1], out[2], out[3]);
 			} else {
 				if ((rv = luo->lookup(luo, out, in)) > 1)
 					error ("%d, %s",xicco->errc,xicco->err);
@@ -869,6 +869,7 @@ in[1] = in[2] = 0.0;
 			for (j = 0; j < outn; j++)
 				yy[j][i] = 100.0 * out[j];
 		}
+fflush(stdout);
 
 		/* plot order: Black Red Green Blue Yellow Purple */
 		if (outs == icSigRgbData) {

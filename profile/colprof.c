@@ -143,7 +143,8 @@ void usage(char *diag, ...) {
 		fprintf(stderr,"             %s\n",vc.desc);
 	}
 	fprintf(stderr," -P              Create gamut gammap_p.wrl and gammap_s.wrl diagostics\n");
-	fprintf(stderr," inoutfile        Base name for input.ti3/output%s file\n",ICC_FILE_EXT);
+	fprintf(stderr," -O outputfile   Override the default output filename.\n");
+	fprintf(stderr," inoutfile       Base name for input.ti3/output%s file\n",ICC_FILE_EXT);
 	exit(1);
 }
 
@@ -187,7 +188,9 @@ int main(int argc, char *argv[]) {
 	icxViewCond ovc_p;			/* Output Viewing Parameters for CAM (enables CAM clip) */
 	int ivc_e = -1, ovc_e = -1;	/* Enumerated viewing condition */
 	icxGMappingIntent pgmi;		/* default Perceptual gamut mapping intent */
+	int pgmi_set = 0;			/* Set by user option */
 	icxGMappingIntent sgmi;		/* default Saturation gamut mapping intent */
+	int sgmi_set = 0;			/* Set by user option */
 	char baname[MAXNAMEL+1] = "";	/* Input & Output base name */
 	char inname[MAXNAMEL+1] = "";	/* Input cgats file base name */
 	char outname[MAXNAMEL+1] = "";	/* Output cgats file base name */
@@ -524,7 +527,7 @@ int main(int argc, char *argv[]) {
 			}
 
 			/* Spectral Observer type */
-			else if (argv[fa][1] == 'o' || argv[fa][1] == 'O') {
+			else if (argv[fa][1] == 'o') {
 				fa = nfa;
 				if (na == NULL) usage("Expect argument to observer flag -o");
 				if (strcmp(na, "1931_2") == 0) {			/* Classic 2 degree */
@@ -599,34 +602,18 @@ int main(int argc, char *argv[]) {
 			else if (argv[fa][1] == 't') {
 				fa = nfa;
 				if (na == NULL) usage("Expect argument to perceptul intent override flag -t");
-#ifdef NEVER
-				if (na[0] >= '0' && na[0] <= '9') {
-					int i = atoi(na);
-					if (xicc_enum_gmapintent(&pgmi, i, NULL) == icxIllegalGMIntent)
-						usage("Unrecognised intent '%s' to perceptual override flag -t",na);
-				} else
-#endif
-				{
-					if (xicc_enum_gmapintent(&pgmi, icxNoGMIntent, na) == icxIllegalGMIntent)
-						usage("Unrecognised intent '%s' to perceptual override flag -t",na);
-				}
+				if (xicc_enum_gmapintent(&pgmi, icxNoGMIntent, na) == icxIllegalGMIntent)
+					usage("Unrecognised intent '%s' to perceptual override flag -t",na);
+				pgmi_set = 1;
 			}
 
 			/* Saturation Mapping intent override */
 			else if (argv[fa][1] == 'T') {
 				fa = nfa;
 				if (na == NULL) usage("Expect argument to saturation intent override flag -T");
-#ifdef NEVER
-				if (na[0] >= '0' && na[0] <= '9') {
-					int i = atoi(na);
-					if (xicc_enum_gmapintent(&sgmi, i, NULL) == icxIllegalGMIntent0)
-						usage("Unrecognised intent '%s' to saturation override flag -t",na);
-				} else
-#endif
-				{
-					if (xicc_enum_gmapintent(&sgmi, icxNoGMIntent, na) == icxIllegalGMIntent)
-						usage("Unrecognised intent '%s' to saturation override flag -t",na);
-				}
+				if (xicc_enum_gmapintent(&sgmi, icxNoGMIntent, na) == icxIllegalGMIntent)
+					usage("Unrecognised intent '%s' to saturation override flag -T",na);
+				sgmi_set = 1;
 			}
 
 			/* Viewing conditions */
@@ -641,14 +628,6 @@ int main(int argc, char *argv[]) {
 
 				fa = nfa;
 				if (na == NULL) usage("Viewing conditions flag (-c) needs an argument");
-#ifdef NEVER
-				if (na[0] >= '0' && na[0] <= '9') {
-					if (vc == &ivc_p)
-						ivc_e = atoi(na);
-					else
-						ovc_e = atoi(na);
-				} else
-#endif
 				if (na[1] != ':') {
 					if (vc == &ivc_p) {
 						if ((ivc_e = xicc_enum_viewcond(NULL, NULL, -2, na, 1, NULL)) == -999)
@@ -704,6 +683,13 @@ int main(int argc, char *argv[]) {
 			else if (argv[fa][1] == 'P')
 				gamdiag = 1;
 
+			/* Output file name */
+			else if (argv[fa][1] == 'O') {
+				fa = nfa;
+				if (na == NULL) usage("Output filename override (-O) needs an argument");
+				strncpy(outname,na,MAXNAMEL); outname[MAXNAMEL] = '\000';
+			}
+
 			else 
 				usage("Unknown flag '%c'",argv[fa][1]);
 		} else
@@ -716,12 +702,30 @@ int main(int argc, char *argv[]) {
 	if (xpi.profDesc == NULL)
 		xpi.profDesc = baname;	/* Default description */
 	strcpy(inname,baname);
-	strcpy(outname,baname);
 	strcat(inname,".ti3");
-	strcat(outname,ICC_FILE_EXT);
+	if (outname[0] == '\000') {		/* If not overridden */
+		strcpy(outname,baname);
+		strcat(outname,ICC_FILE_EXT);
+	}
 
+	/* Issue some errors & warnings for strange combinations */
 	if (fwacomp && spec == 0)
-		error ("FWA compensation only works when viewer and/or illuminant selected");
+		error("FWA compensation only works when viewer and/or illuminant selected");
+
+	if (pgmi_set && ipname[0] == '\000')
+		warning("-t perceptual intent override only works if -s srcprof or -S srcprof is used");
+
+	if (sgmi_set && ipname[0] == '\000')
+		warning("-T saturation intent override only works if -S srcprof is used");
+
+	if (sgmi_set && sepsat == 0) {	/* Won't do much otherwise */
+		if (verb)
+			printf("Saturation intent override was set, so adding saturation intent table\n");
+		sepsat = 1;
+	}
+
+	if (sgname[0] != '\000' && ipname[0] == '\000')
+		warning("-g srcgam will do nothing without -s srcprof or -S srcprof");
 
 	if (oquality == -1) {		/* B2A tables will be used */
 		oquality = iquality;
@@ -746,7 +750,7 @@ int main(int argc, char *argv[]) {
 	 && icg->find_field(icg, 0, "XYZ_X") < 0) {
 
 		if (icg->find_kword(icg, 0, "SPECTRAL_BANDS") < 0)
-			error ("Neither CIE nor spectral data found in file '%s'",inname);
+			error("Neither CIE nor spectral data found in file '%s'",inname);
 
 		/* Switch to using spectral information */
 		if (verb)

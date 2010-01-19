@@ -81,6 +81,7 @@
 #include "xicc.h"
 
 #define COMPLOOKUP	/* Compound with previous in ICM lookup rather than rspl */
+#undef WARN_CLUT_CLIPPING   /* [Undef] Print warning if setting clut clips */
 #undef DEBUG1		/* Print each correction value */
 #undef DEBUG2		/* Print each value changed */
 #undef DEBUG3		/* Trace history of particular points */
@@ -768,7 +769,7 @@ main(int argc, char *argv[]) {
 		ink.tlimit += 0.05;		/* allow a slight margine */
 
 		if (verb)
-			printf("Estimated Total inklimit is %f%%, Black %f%% \n",100.0 * ink.tlimit,100.0 * ink.klimit);
+			printf("Estimated Total inklimit is %f%%, Black %f%% \n",100.0 * ink.tlimit,ink.klimit < 0.0 ? 100.0 : 100.0 * ink.klimit);
 
 		/* Get a expanded color conversion object suitable for gamut */
 		if ((dev_luo = dev_xicc->get_luobj(dev_xicc, ICX_CLIP_NEAREST, icmFwd,
@@ -1174,8 +1175,10 @@ main(int argc, char *argv[]) {
 
 		if (verb)
 			printf("\n");
+#ifdef WARN_CLUT_CLIPPING
 		if (wr_icc->warnc)
 			warning("Values clipped in setting abstract LUT");
+#endif /* WARN_CLUT_CLIPPING */
 		if (verb)
 			printf("Done filling abstract table\n");
 	}

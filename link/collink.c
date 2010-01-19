@@ -345,7 +345,8 @@ void devi_devip(void *cntx, double *out, double *in) {
 /* clut, DevIn' -> DevOut' */
 void devip_devop(void *cntx, double *out, double *in) {
 	double win[MAX_CHAN];			/* working input values */
-	double pcsv[MAX_CHAN];			/* PCS intermediate value */
+	double pcsv[MAX_CHAN];			/* PCS intermediate value, pre-gamut map */
+	double pcsvm[MAX_CHAN];			/* PCS intermediate value, post-gamut map */
 	double locus[MAX_CHAN];			/* Auxiliary locus values */
 	int wptrig = 0;				/* White point hack triggered */
 	double konlyness = 0.0;		/* Degree of K onlyness */
@@ -499,14 +500,16 @@ void devip_devop(void *cntx, double *out, double *in) {
 		}
 	    case icmLutType: {
 			icxLuLut *lu = (icxLuLut *)p->in.luo;	/* Safe to coerce */
-			if (p->in.nocurve) {	/* No explicit curve, so do implicit here */
+			if (p->in.nocurve) {	/* No explicit curve, so we've got Dev */
 				/* Since not PCS, in_abs and matrix cannot be valid, */
 				/* so input curve on own is ok to use. */
-				rv |= lu->input(lu, pcsv, win);
-				rv |= lu->clut(lu, pcsv, pcsv);
-			} else {
-				rv |= lu->clut(lu, pcsv, win);
+				rv |= lu->input(lu, pcsv, win);		/* Dev  -> Dev' */
+				rv |= lu->clut(lu, pcsv, pcsv);		/* Dev' -> PCS' */
+			} else {	/* We've got Dev' */
+				rv |= lu->clut(lu, pcsv, win);		/* Dev' -> PCS' */
 			}
+			/* We've got the input profile PCS' at this point. */
+
 			/* If we're transfering the K value from the input profile to the */
 			/* output, copy it into locus[], which will be given to the inverse */
 			/* lookup function, else the inverse lookup will generate a K using */
@@ -514,11 +517,16 @@ void devip_devop(void *cntx, double *out, double *in) {
 //printf("~1 out.inking = %d\n",p->out.inking);
 			if (p->out.inking == 0 || p->out.inking == 6) {
 				if (p->out.locus) {
+					/* Converts PCS' to K locus proportion */
 					lu->clut_locus(lu, locus, pcsv, win);	/* Compute possible locus values */
 //printf("~1 looked up locus value\n");
 				} else {
-					for (i = 0; i < p->in.chan; i++)		/* Target is K value */
+					for (i = 0; i < p->in.chan; i++)		/* Target is K input value */
 						locus[i] = win[i];
+					/* Convert K' to K value ready for aux target */
+					if (!p->in.nocurve) {	/* we have an input curve, so convert Dev' -> Dev */
+						lu->inv_input(lu, locus, locus);
+					}
 //printf("~1 copied win to locus\n");
 				}
 #ifdef DEBUG
@@ -528,8 +536,8 @@ void devip_devop(void *cntx, double *out, double *in) {
 				printf("Got possible K %s of %f %f %f %f\n",p->out.locus ? "locus" : "value", locus[0],locus[1],locus[2],locus[3]);
 #endif
 			}
-			rv |= lu->output(lu, pcsv, pcsv);
-			rv |= lu->out_abs(lu, pcsv, pcsv);
+			rv |= lu->output(lu, pcsv, pcsv);	/* PCS' ->     */
+			rv |= lu->out_abs(lu, pcsv, pcsv);	/*         PCS */
 			break;
 		}
 		default:
@@ -633,6 +641,7 @@ void devip_devop(void *cntx, double *out, double *in) {
 #endif
 	}
 
+
 	/* Do gamut mapping */
 	if (wptrig == 0 && p->mode > 0 && p->gmi.usemap) {
 		/* We've used pcsor to ensure PCS space is appropriate */
@@ -649,7 +658,7 @@ void devip_devop(void *cntx, double *out, double *in) {
 			/* Compute blend of normal gamut map and Konly to Konly gamut map */	
 			p->map->domap(p->map, map0, pcsv);
 			p->Kmap->domap(p->Kmap, map1, pcsv);
-			icmBlend3(pcsv, map0, map1, konlyness);
+			icmBlend3(pcsvm, map0, map1, konlyness);
 
 #ifdef DEBUG
 #ifdef DEBUGC
@@ -660,16 +669,23 @@ void devip_devop(void *cntx, double *out, double *in) {
 
 		/* Normal gamut mapping */
 		} else {
-			p->map->domap(p->map, pcsv, pcsv);
+			p->map->domap(p->map, pcsvm, pcsv);
 		}
+
 
 #ifdef DEBUG
 #ifdef DEBUGC
-	DEBUGC
+		DEBUGC
 #endif
-		printf("PCS after map %f %f %f\n",pcsv[0], pcsv[1], pcsv[2]); fflush(stdout);
+		printf("PCS after map %f %f %f\n",pcsvm[0], pcsvm[1], pcsvm[2]); fflush(stdout);
 #endif
+	} else {
+		pcsvm[0] = pcsv[0];
+		pcsvm[1] = pcsv[1];
+		pcsvm[2] = pcsv[2];
 	}
+
+	/* Gamut mapped PCS value is now in pcsvm[] */
 
 	/* Abstract profile transform, PCS -> PCS */
 	/* pcsor -> abstract -> pcsor conversion */
@@ -685,12 +701,12 @@ void devip_devop(void *cntx, double *out, double *in) {
 		/* We should really run the source through the abstract profile before */
 		/* creating the gamut mapping, to be able to use abstract with gamut */
 		/* mapping properly. */
-		p->abs_luo->lookup(p->abs_luo, pcsv, pcsv);
+		p->abs_luo->lookup(p->abs_luo, pcsvm, pcsvm);
 #ifdef DEBUG
 #ifdef DEBUGC
 	DEBUGC
 #endif
-		printf("PCS after abstract %f %f %f\n",pcsv[0], pcsv[1], pcsv[2]); fflush(stdout);
+		printf("PCS after abstract %f %f %f\n",pcsvm[0], pcsvm[1], pcsvm[2]); fflush(stdout);
 #endif
 	}
 
@@ -704,8 +720,8 @@ void devip_devop(void *cntx, double *out, double *in) {
 			error ("Attempting to use non-CMYK output profile to determine K inking");
 
 		/* Lookup PCS in B2A of output profile to get target K value */  
-//printf("~1 looking up pcs %f %f %f in B2A\n", pcsv[0], pcsv[1], pcsv[2]);
-		p->out.b2aluo->lookup(p->out.b2aluo, tdevv, pcsv);
+//printf("~1 looking up pcs %f %f %f in B2A\n", pcsvm[0], pcsvm[1], pcsvm[2]);
+		p->out.b2aluo->lookup(p->out.b2aluo, tdevv, pcsvm);
 //printf("~1 resulting dev %f %f %f %f\n", tdevv[0], tdevv[1], tdevv[2], tdevv[3]);
 
 		if (p->out.locus) {
@@ -713,7 +729,7 @@ void devip_devop(void *cntx, double *out, double *in) {
 			icxLuLut *lu = (icxLuLut *)p->out.luo;		/* Safe to coerce */
 
 			/* Convert PCS to PCS' ready for locus lookup */
-			lu->in_abs(lu, tpcsv, pcsv);
+			lu->in_abs(lu, tpcsv, pcsvm);
 			lu->matrix(lu, tpcsv, tpcsv);
 			lu->input(lu, tpcsv, tpcsv);
 			lu->clut_locus(lu, locus, tpcsv, tdevv);	/* Compute locus values */
@@ -732,11 +748,11 @@ void devip_devop(void *cntx, double *out, double *in) {
 	/* Do PCS -> DevOut' */
 	if (p->nhack == 3		/* All to K only */
 	 || ntrig	 			/* Neutral or K only to K only hack has triggered */
-	 || cmytrig) {			/* 100% CMY trough hack has triggered */
+	 || cmytrig) {			/* 100% CMY rough hack has triggered */
 
 		if (p->nhack == 3 || ntrig) { /* Neutral to K only hack has triggered */
 			co pp;
-			pp.p[0] = pcsv[0];					/* Input L value */
+			pp.p[0] = pcsvm[0];					/* Input L value */
 			p->pcs2k->interp(p->pcs2k, &pp);	/* L -> K' */
 			if (pp.v[0] < 0.0)		/* rspl might have extrapolated */
 				pp.v[0] = 0.0;
@@ -752,7 +768,7 @@ void devip_devop(void *cntx, double *out, double *in) {
 				printf("Neutral hack mapped %s to 0 0 0 %f\n", icmPdv(p->in.chan,win), out[3]); 
 				fflush(stdout);
 			}
-		} else if (cmytrig) { /* 100% CMY trough hack has triggered */
+		} else if (cmytrig) { /* 100% CMY rough hack has triggered */
 			if (cmytrig & 1) {
 				out[0] = 1.0;
 				out[1] = out[2] = out[3] = 0.0;
@@ -780,8 +796,8 @@ void devip_devop(void *cntx, double *out, double *in) {
 		    case icmMonoBwdType: {
 				icxLuMono *lu = (icxLuMono *)p->out.luo;	/* Safe to coerce */
 
-				rv |= lu->bwd_abs(lu, pcsv, pcsv);
-				rv |= lu->bwd_map(lu, out, pcsv);
+				rv |= lu->bwd_abs(lu, pcsvm, pcsvm);
+				rv |= lu->bwd_map(lu, out, pcsvm);
 				if (p->out.nocurve) {	/* No explicit curve, so do implicit here */
 					rv |= lu->bwd_curve(lu, out, out);
 				}
@@ -790,8 +806,8 @@ void devip_devop(void *cntx, double *out, double *in) {
 		    case icmMatrixBwdType: {
 				icxLuMatrix *lu = (icxLuMatrix *)p->out.luo;	/* Safe to coerce */
 
-				rv |= lu->bwd_abs(lu, pcsv, pcsv);
-				rv |= lu->bwd_matrix(lu, out, pcsv);
+				rv |= lu->bwd_abs(lu, pcsvm, pcsvm);
+				rv |= lu->bwd_matrix(lu, out, pcsvm);
 				if (p->out.nocurve) {	/* No explicit curve, so do implicit here */
 					rv |= lu->bwd_curve(lu, out, out);
 				}
@@ -801,10 +817,10 @@ void devip_devop(void *cntx, double *out, double *in) {
 				icxLuLut *lu = (icxLuLut *)p->out.luo;	/* Safe to coerce */
 
 				if (p->mode < 2) {	/* Using B2A table */
-					rv |= lu->in_abs(lu, pcsv, pcsv);
-					rv |= lu->matrix(lu, pcsv, pcsv);
-					rv |= lu->input(lu, pcsv, pcsv);
-					rv |= lu->clut(lu, out, pcsv);
+					rv |= lu->in_abs(lu, pcsvm, pcsvm);
+					rv |= lu->matrix(lu, pcsvm, pcsvm);
+					rv |= lu->input(lu, pcsvm, pcsvm);
+					rv |= lu->clut(lu, out, pcsvm);
 					if (p->out.nocurve) {	/* No explicit curve, so do implicit here */
 						rv |= lu->output(lu, out, out);
 					}
@@ -815,16 +831,16 @@ void devip_devop(void *cntx, double *out, double *in) {
 					/* Because we have used the ICX_MERGE_CLUT flag, we don't need */
 					/* to call inv_out_abs() and inv_output() */
 #else
-					rv |= lu->inv_out_abs(lu, pcsv, pcsv);
-					rv |= lu->inv_output(lu, pcsv, pcsv);
+					rv |= lu->inv_out_abs(lu, pcsvm, pcsvm);
+					rv |= lu->inv_output(lu, pcsvm, pcsvm);
 #endif
 
 #ifdef DEBUG
 #ifdef DEBUGC
 					DEBUGC
 #endif
-					printf("Calling inv_clut with K aux targets %f %f %f %f and pcsv %f %f %f %f\n",
-					locus[0],locus[1],locus[2],locus[3],pcsv[0],pcsv[1],pcsv[2],pcsv[3]);
+					printf("Calling inv_clut with K aux targets %f %f %f %f and pcsvm %f %f %f %f\n",
+					locus[0],locus[1],locus[2],locus[3],pcsvm[0],pcsvm[1],pcsvm[2],pcsvm[3]);
 #endif
 
 					/* locus[] contains possible K target or locus value, */
@@ -832,7 +848,7 @@ void devip_devop(void *cntx, double *out, double *in) {
 					for (i = 0; i < p->out.chan; i++)
 						out[i] = locus[i];
 
-					rv |= lu->inv_clut(lu, out, pcsv);
+					rv |= lu->inv_clut(lu, out, pcsvm);
 #ifdef DEBUG
 #ifdef DEBUGC
 					DEBUGC
@@ -865,6 +881,15 @@ void devip_devop(void *cntx, double *out, double *in) {
 		}
 	}
 
+
+#ifdef DEBUG
+#ifdef DEBUGC
+	DEBUGC
+#endif
+	printf("DevIn'->DevOut' ret %f %f %f %f\n\n",out[0], out[1], out[2], out[3]); fflush(stdout);
+#endif
+
+
 	if (p->verb) {		/* Output percent intervals */
 		int pc;
 		p->count++;
@@ -874,13 +899,6 @@ void devip_devop(void *cntx, double *out, double *in) {
 			p->last = pc;
 		}
 	}
-
-#ifdef DEBUG
-#ifdef DEBUGC
-	DEBUGC
-#endif
-	printf("DevIn'->DevOut' ret %f %f %f %f\n\n",out[0], out[1], out[2], out[3]); fflush(stdout);
-#endif
 }
 
 /* - - - - - - - - - - - - - - - - */
@@ -2415,7 +2433,8 @@ main(int argc, char *argv[]) {
 
 		li.map = new_gammap(li.verb, csgam, igam, ogam, &li.gmi,
 		                    li.src_kbp, li.dst_kbp, li.cmyhack, li.rel_oride,
-		                    mapres, NULL, NULL, li.gamdiag ? "gammap.wrl" : NULL);
+		                    mapres, NULL, NULL, li.gamdiag ? "gammap.wrl" : NULL
+		);
 		if (li.map == NULL)
 			error ("Failed to make gamut map transform");
 
@@ -2425,11 +2444,11 @@ main(int argc, char *argv[]) {
 
 			li.Kmap = new_gammap(li.verb, csgam, igam, ogam, &li.gmi,
 			                    1, 1, li.cmyhack, li.rel_oride,
-			                    mapres, NULL, NULL, li.gamdiag ? "gammap.wrl" : NULL);
+			                    mapres, NULL, NULL, li.gamdiag ? "gammap.wrl" : NULL
+			);
 			if (li.Kmap == NULL)
 				error ("Failed to make K only gamut map transform");
 		}
-
 
 		ogam->del(ogam);
 		if (igam != NULL)
@@ -2808,17 +2827,10 @@ main(int argc, char *argv[]) {
 		}
 		/* 16 bit input device -> output device lut: */
 		{
+			int inputEnt, outputEnt, clutPoints;
 			icmLut *wo;
-			int inputEnt, outputEnt;
 
-			/* Link Lut = AToB0 */
-			if ((wo = (icmLut *)wr_icc->add_tag(
-			           wr_icc, icSigAToB0Tag,	icSigLut16Type)) == NULL) 
-				error("add_tag failed: %d, %s",wr_icc->errc,wr_icc->err);
-
-			wo->inputChan = li.in.chan;
-			wo->outputChan = li.out.chan;
-
+			/* Setup the cLUT resolutions */
 			if (li.quality >= 3)
 	    		inputEnt = 4096;
 			else if (li.quality == 2)
@@ -2831,83 +2843,85 @@ main(int argc, char *argv[]) {
 			if (in_curve_res > inputEnt)
 				inputEnt = in_curve_res;
 
-    		wo->inputEnt = inputEnt;
-			
 			/* See discussion in imdi/imdi_gen.c for ideal numbers */
 			switch (li.in.chan) {
 				case 0:
 					error ("Illegal number of input chanels");
 				case 1:
 					if (li.quality >= 3)
-			  		  	wo->clutPoints = 255;
+			  		  	clutPoints = 255;
 					else if (li.quality == 2)
-			  		  	wo->clutPoints = 255;
+			  		  	clutPoints = 255;
 					else
-			  		  	wo->clutPoints = 255;
+			  		  	clutPoints = 255;
 					break;
 
 				case 2:
 					if (li.quality >= 2)
-		  		  		wo->clutPoints = 255;
+		  		  		clutPoints = 255;
 					else
-		  		  		wo->clutPoints = 86;
+		  		  		clutPoints = 86;
 					break;
 				case 3:
 					if (li.quality >= 3)
-		  		  		wo->clutPoints = 52;
+		  		  		clutPoints = 52;
 					else if (li.quality == 2)
-		  		  		wo->clutPoints = 33;
+		  		  		clutPoints = 33;
 					else if (li.quality == 1)
-		  		  		wo->clutPoints = 17;
+		  		  		clutPoints = 17;
 					else
-		  		  		wo->clutPoints = 9;
+		  		  		clutPoints = 9;
 					break;
 				case 4:
 					if (li.quality >= 3)
-		  		  		wo->clutPoints = 33;
+		  		  		clutPoints = 33;
 					else if (li.quality == 2)
-		  		  		wo->clutPoints = 18;
+		  		  		clutPoints = 18;
 					else if (li.quality == 1)
-		  		  		wo->clutPoints = 9;
+		  		  		clutPoints = 9;
 					else
-		  		  		wo->clutPoints = 6;
+		  		  		clutPoints = 6;
 					break;
 				case 5:
 					if (li.quality >= 3)
-		  		  		wo->clutPoints = 18;
+		  		  		clutPoints = 18;
 					else if (li.quality == 2)
-		  		  		wo->clutPoints = 16;
+		  		  		clutPoints = 16;
 					else 
-						wo->clutPoints = 9;
+						clutPoints = 9;
 					break;
 				case 6:
 					if (li.quality >= 3)
-		  		  		wo->clutPoints = 12;
+		  		  		clutPoints = 12;
 					else if (li.quality == 2)
-		  		  		wo->clutPoints = 9;
+		  		  		clutPoints = 9;
 					else 
-						wo->clutPoints = 6;
+						clutPoints = 6;
 					break;
 				case 7:
 					if (li.quality >= 3)
-		  		  		wo->clutPoints = 8;
+		  		  		clutPoints = 8;
 					else if (li.quality == 2)
-		  		  		wo->clutPoints = 7;
+		  		  		clutPoints = 7;
 					else 
-						wo->clutPoints = 6;
+						clutPoints = 6;
 					break;
 				case 8:
 					if (li.quality >= 3)
-		  		  		wo->clutPoints = 7;
+		  		  		clutPoints = 7;
 					else if (li.quality == 2)
-		  		  		wo->clutPoints = 6;
+		  		  		clutPoints = 6;
 					else 
-						wo->clutPoints = 5;
+						clutPoints = 5;
 					break;
 				default: /* > 8 chan */
-					wo->clutPoints = 3;
+					clutPoints = 3;
 					break;
 			}	
+
+			if (li.clutres > 0)		/* clut resolution override */
+  		  		clutPoints = li.clutres;
+			li.clutres = clutPoints;	/* Actual resolution */
 
 			if (li.quality >= 3)
 	    		outputEnt = 4096;
@@ -2921,11 +2935,20 @@ main(int argc, char *argv[]) {
 			if (out_curve_res > outputEnt)
 				outputEnt = out_curve_res;
 
+
+			/* Link Lut = AToB0 */
+			if ((wo = (icmLut *)wr_icc->add_tag(
+			           wr_icc, icSigAToB0Tag,	icSigLut16Type)) == NULL) 
+				error("add_tag failed: %d, %s",wr_icc->errc,wr_icc->err);
+
+			wo->inputChan = li.in.chan;
+			wo->outputChan = li.out.chan;
+
+			/* Setup the tables resolutions */
+    		wo->inputEnt = inputEnt;
+  		  	wo->clutPoints = clutPoints;
 	  		wo->outputEnt = outputEnt;
 
-			if (li.clutres > 0)		/* clut resolution override */
-  		  		wo->clutPoints = li.clutres;
-			li.clutres = wo->clutPoints;	/* Actual resolution */
 			if (wo->allocate((icmBase *)wo) != 0)	/* Allocate space */
 				error("allocate failed: %d, %s",wr_icc->errc,wr_icc->err);
 
@@ -2935,6 +2958,8 @@ main(int argc, char *argv[]) {
 				icxLuLut *lu = (icxLuLut *)li.in.luo;
 				lu->get_matrix(lu, wo->e);		/* Copy it across */
 			}
+
+
 
 			if (li.verb)
 				printf("Filling in Lut table\n");
@@ -2971,18 +2996,20 @@ main(int argc, char *argv[]) {
 			if (li.verb) {
 				unsigned int ui;
 				int itotal;
-				for (itotal = 1, ui = 0; ui < wo->inputChan; ui++, itotal *= wo->clutPoints)
+				for (itotal = 1, ui = 0; ui < li.in.chan; ui++, itotal *= clutPoints)
 					; 
 				li.total = itotal;
 				/* Allow for extra lookups due to ICM_CLUT_SET_APXLS */
-				for (itotal = 1, ui = 0; ui < wo->inputChan; ui++, itotal *= (wo->clutPoints-1))
+				for (itotal = 1, ui = 0; ui < li.in.chan; ui++, itotal *= (clutPoints-1))
 					; 
 				li.total += itotal;
+				li.count = 0;
 				printf(" 0%%"); fflush(stdout);
 			}
-			if (wo->set_tables(wo,
+			if (icmSetMultiLutTables(
+				1,
+				&wo,
 				ICM_CLUT_SET_APXLS,			/* Use aproximate least squares */
-//				0,							/* No flags */
 				&li,						/* Context */
 				li.in.h->colorSpace,		/* Input color space */
 				li.out.h->colorSpace,		/* Output color space */
@@ -3002,6 +3029,7 @@ main(int argc, char *argv[]) {
 #endif /* WARN_CLUT_CLIPPING */
 
 #endif	/* !DEBUG_ONE */
+
 		}
 
 		if (li.verb && li.wphack && li.wphacked == 0)

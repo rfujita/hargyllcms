@@ -48,10 +48,10 @@ usage(char *mes) {
 	fprintf(stderr," -2            Create dummy .ti2 file as well\n");
 	fprintf(stderr," -l limit      set ink limit, 0 - 400%% (default max in file)\n");
 	fprintf(stderr," -d            Set type of device as Display, not Output\n");
-	fprintf(stderr," [devfile]     Device CMYK target .txt file\n");
-	fprintf(stderr," infile        Input CIE, Spectral or Device & Spectral.txt file\n");
-	fprintf(stderr," [specfile]    Input Spectral .txt file\n");
-	fprintf(stderr," outfile       Output file basename\n");
+	fprintf(stderr," [devfile]     Input Device CMYK target file (typically file.txt)\n");
+	fprintf(stderr," infile        Input CIE, Spectral or Device & Spectral file (typically file.txt)\n");
+	fprintf(stderr," [specfile]    Input Spectral file (typically file.txt)\n");
+	fprintf(stderr," outbasename   Output file basename for .ti3 and .ti2\n");
 	exit(1);
 	}
 

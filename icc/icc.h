@@ -757,13 +757,14 @@ struct _icmLut {
 		
 }; typedef struct _icmLut icmLut;
 
-/* Helper function to set multiple Lut tables simultaneously */
+/* Helper function to set multiple Lut tables simultaneously. */
 /* Note that these tables all have to be compatible in */
-/* having the same configuration and resolutions. */
+/* having the same configuration and resolutions, and the */
+/* same per channel input and output curves. */
 /* Set errc and return error number in underlying icc */
-int icmSetMultiLutTables (
-	int ntables,							/* Number of tables to be set, 1..3 */
-	struct _icmLut *p[3],					/* Pointer to Lut object */
+int icmSetMultiLutTables(
+	int ntables,							/* Number of tables to be set, 1..n */
+	struct _icmLut **p,						/* Pointer to Lut object */
 	int     flags,							/* Setting flags */
 	void   *cbctx,							/* Opaque callback context pointer value */
 	icColorSpaceSignature insig, 			/* Input color space */
@@ -785,33 +786,6 @@ int icmSetMultiLutTables (
 								/* Will be called ntables times on each output value */
 );
 		
-
-/* Helper function to set multiple Lut tables simultaneously */
-/* Note that these tables all have to be compatible in */
-/* having the same configuration and resolutions. */
-/* Set errc and return error number in underlying icc */
-/* Version that assumes independence of input and output curves */
-int icmSetMultiLutTables2 (
-	int ntables,							/* Number of tables to be set, 1..n */
-	struct _icmLut *p[3],					/* Pointer to Lut objects */
-	int     flags,							/* Setting flags */
-	void   *cbctx,							/* Opaque callback context pointer value */
-	icColorSpaceSignature insig, 			/* Input color space */
-	icColorSpaceSignature outsig, 			/* Output color space */
-	void (*infunc)(void *cbctx, double *out, double *in, int tab),
-							/* Input transfer function, inspace->inspace' (NULL = default) */
-	double *inmin[MAX_CHAN], double *inmax[MAX_CHAN],
-							/* Maximum range of inspace' values (NULL = default) */
-	void (*clutfunc)(void *cbntx, double *out, double *in, int tab),
-							/* inspace' -> outspace[ntables]' transfer function */
-							/* will be called once for each input' grid value */
-	double *clutmin[MAX_CHAN], double *clutmax[MAX_CHAN],	
-							/* Maximum range of outspace' values (NULL = default) */
-	void (*outfunc)(void *cbntx, double *out, double *in, int tab)
-								/* Output transfer function, outspace'->outspace (NULL = deflt) */
-);
-		
-
 /* - - - - - - - - - - - - - - - - - - - - -  */
 /* Measurement Data */
 struct _icmMeasurement {
@@ -1451,15 +1425,30 @@ struct _icc {
 															/* Returns 0 if deleted OK */
 	int          (*check_id)(struct _icc *p, ORD8 *id); /* Returns 0 if ID is OK, 1 if not present etc. */
 	double       (*get_tac)(struct _icc *p, double *chmax, /* Returns total ink limit and channel maximums */
-	                        void (*calfunc)(void *cntx, double *out, double *in), void *cntx);	/* optional cal. lookup */
-	icmLuBase *  (*get_luobj) (struct _icc *p,
-                                     icmLookupFunc func,			/* Functionality */
-	                                 icRenderingIntent intent,		/* Intent */
-	                                 icColorSpaceSignature pcsor,	/* PCS override (0 = def) */
-	                                 icmLookupOrder order);			/* Search Order */
-	                                 /* Return appropriate lookup object */
-	                                 /* NULL on error, check errc+err for reason */
+	void (*calfunc)(void *cntx, double *out, double *in), void *cntx);	/* optional cal. lookup */
 
+	/* Get a particular color conversion function */
+	icmLuBase *  (*get_luobj) (struct _icc *p,
+                               icmLookupFunc func,			/* Functionality */
+	                           icRenderingIntent intent,	/* Intent */
+	                           icColorSpaceSignature pcsor,	/* PCS override (0 = def) */
+	                           icmLookupOrder order);		/* Search Order */
+	                           /* Return appropriate lookup object */
+	                           /* NULL on error, check errc+err for reason */
+
+	/* Low level - load specific cLUT conversion */
+	icmLuBase *  (*new_clutluobj)(struct _icc *p,
+	                            icTagSignature        ttag,		  /* Target Lut tag */
+                                icColorSpaceSignature inSpace,	  /* Native Input color space */
+                                icColorSpaceSignature outSpace,	  /* Native Output color space */
+                                icColorSpaceSignature pcs,		  /* Native PCS (from header) */
+                                icColorSpaceSignature e_inSpace,  /* Override Inpt color space */
+                                icColorSpaceSignature e_outSpace, /* Override Outpt color space */
+                                icColorSpaceSignature e_pcs,	  /* Override PCS */
+	                            icRenderingIntent     intent,	  /* Rendering intent (For abs.) */
+	                            icmLookupFunc         func);	  /* For icmLuSpaces() */
+	                           /* Return appropriate lookup object */
+	                           /* NULL on error, check errc+err for reason */
 	
     icmHeader       *header;			/* The header */
 	char             err[512];			/* Error message */
@@ -1852,6 +1841,9 @@ void icmTranspose3x3(double out[3][3], double in[3][3]);
 /* and scales one onto the other about the origin 0,0,0. */
 /* Use icmMulBy3x3() to apply this to other points */
 void icmRotMat(double mat[3][3], double src[3], double targ[3]);
+
+/* Copy a 3x4 transform matrix */
+void icmCpy3x4(double out[3][4], double mat[3][4]);
 
 /* Multiply 3 array by 3x4 transform matrix */
 void icmMul3By3x4(double out[3], double mat[3][4], double in[3]);

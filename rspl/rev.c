@@ -550,7 +550,7 @@ rev_interp_rspl(
 	
 		/* If we selected exact aux, but failed to find a solution, relax expectation */
 		if (b->nsoln == 0 && b->naux > 0 && (flags & RSPL_EXACTAUX)) {
-//printf("~1 relaxing expactation when nsoln == %d, naux = %d, falgs & RSPL_EXACTAUX = 0x%x\n", b->nsoln,b->naux,flags & RSPL_EXACTAUX);
+//printf("~1 relaxing notclip expactation when nsoln == %d, naux = %d, falgs & RSPL_EXACTAUX = 0x%x\n", b->nsoln,b->naux,flags & RSPL_EXACTAUX);
 			DBG(("Searching for exact match to auxiliary target failed, so try again\n"));
 			adjust_search(s, flags & ~RSPL_EXACTAUX, NULL, exact);
 
@@ -666,6 +666,7 @@ rev_interp_rspl(
 		/* If we selected exact aux, but failed to find a solution, relax expectation */
 		if (b->nsoln == 0 && b->naux > 0 && (flags & RSPL_EXACTAUX)) {
 			DBG(("Searching for exact match to auxiliary target failed, so try again\n"));
+//printf("~1 relaxing didclip expactation when nsoln == %d, naux = %d, flags & RSPL_EXACTAUX = 0x%x\n", b->nsoln,b->naux,flags & RSPL_EXACTAUX);
 			adjust_search(s, flags & ~RSPL_EXACTAUX, NULL, exact);
 
 #ifdef STATS
@@ -1118,7 +1119,7 @@ init_search(
 	b->iclip = 0;					/* Default solution isn't above ink limit */
 
 	if (flags & RSPL_EXACTAUX)		/* Expect to be able to match auxiliary target exactly */
-		b->idist = 0.0001;			/* Best input distance to beat - helps sort/triage */
+		b->idist = 2.0 * EPS;		/* Best input distance to beat - helps sort/triage */
 	else
 		b->idist = INF_DIST;		/* Best input distance to beat. */
 	b->iabove = 0;					/* Best isn't known to be above (yet) */
@@ -1176,7 +1177,7 @@ adjust_search(
 			b->compute = auxil_compute;
 			b->snsdi = di;				/* Start here DOF = di-fdi locus solutions */
 			b->ensdi = fdi;				/* End with DOF = 0 for point solutions, */
-			break;						/* will early exit DOF. */
+			break;						/* will early exit DOF if good soln found. */
 		case locus:
 			b->setsort = locus_setsort;
 			b->check   = locus_check;
@@ -1204,7 +1205,7 @@ adjust_search(
 	b->nsoln = 0;					/* No solutions at present */
 
 	if (flags & RSPL_EXACTAUX)		/* Expect to be able to match auxiliary target exactly */
-		b->idist = 0.0001;			/* Best input distance to beat - helps sort/triage */
+		b->idist = 2.0 * EPS;		/* Best input distance to beat - helps sort/triage */
 	else
 		b->idist = INF_DIST;		/* Best input distance to beat. */
 	b->iabove = 0;					/* Best isn't known to be above (yet) */
@@ -1556,9 +1557,11 @@ unsigned int tcount		/* grid touch count for this operation */
 
 				/* Next Simplex dimensionality */
 				if (b->ensdi < b->snsdi) {
-					if (nsdi == b->snsdi && b->nsoln > 0)	/* Don't continue though decreasing */
-						break;			/* sub-simplex dimensions if we found a solution at */
-										/* the highest dimension level. */
+					if (nsdi == b->snsdi && b->nsoln > 0
+					 && (b->op != auxil || b->idist <= 2.0 * EPS))
+						break; 		/* Don't continue though decreasing */
+									/* sub-simplex dimensions if we found a solution at */
+									/* the highest dimension level. */
 					nsdi--;
 				} else if (b->ensdi > b->snsdi) {
 					nsdi++;				/* Continue through increasing sub-simplex dimenionality */
@@ -2150,12 +2153,17 @@ static int auxil_compute(schbase *b, simplex *x) {
 	DBG(("\nAuxil: computing possible solution\n"));
 
 #ifdef DEBUG
-	printf("Simplex of cell ix %d, sdi = %d, efdi = %d\n",x->ix, x->sdi, x->efdi);
+	{
+	unsigned int sum = 0;
+	for (f = 0; f <= x->sdi; f++)
+		sum += x->vix[f];
+	printf("Simplex of cell ix %d, sum 0x%x, sdi = %d, efdi = %d\n",x->ix, sum, x->sdi, x->efdi);
 	printf("Target val %s\n",icmPdv(fdi, b->v));
 	for (f = 0; f <= x->sdi; f++) {
 		int ix = x->vix[f], i;
 		float *fcb = s->g.a + ix * s->g.pss;	/* Pointer to base float of fwd cell */
 		printf("Simplex vtx %d [cell ix %d] val %s\n",f,ix,icmPfv(fdi, fcb));
+	}
 	}
 #endif
 
@@ -2208,6 +2216,8 @@ static int auxil_compute(schbase *b, simplex *x) {
 	/* Convert solution from simplex relative to absolute space */
 	simplex_to_abs(x, p, xp);
 
+	DBG(("Got solution at %s\n", icmPdv(di,p)));
+
 //printf("~~ soln = %f %f %f %f\n",p[0],p[1],p[2],p[3]);
 //printf("~~ About to compute auxil distance\n");
 	/* Compute distance to auxiliary target */
@@ -2223,22 +2233,20 @@ static int auxil_compute(schbase *b, simplex *x) {
 //printf("~1 best idist %f, best iabove %d\n",b->idist, b->iabove);
 
 	/* We want the smallest error from auxiliary target */
-	if (b->nsoln != 0) {
-		if (b->flags & RSPL_MAXAUX) {
-			if (nabove < b->iabove || (nabove == b->iabove && idist >= b->idist)) {
-				DBG(("nabove %d, iabove %d, idist = %f, better solution has been found before\n",nabove, b->iabove, idist));
-				return 0;
-			}
-		} else {
-			if (idist >= b->idist) {	/* Equal or worse auxiliary solution */
-				DBG(("idist = %f, better solution has been found before\n",idist));
-				return 0;
-			}
+	if (b->flags & RSPL_MAXAUX) {
+		if (nabove < b->iabove || (nabove == b->iabove && idist >= b->idist)) {
+			DBG(("nsoln %d, nabove %d, iabove %d, idist = %f, better solution has been found before\n",b->nsoln, nabove, b->iabove, idist));
+			return 0;
+		}
+	} else {
+		if (idist >= b->idist) {	/* Equal or worse auxiliary solution */
+			DBG(("nsoln %d, idist = %f, better solution has been found before\n",b->nsoln,idist));
+			return 0;
 		}
 	}
 
 	/* Solution is accepted */
-	DBG(("######## Accepting new solution with idist %f\n",idist));
+	DBG(("######## Accepting new solution with nabove %d <= iabove %d and idist %f <= %f\n",nabove,b->iabove,idist,b->idist));
 	for (e = 0; e < di; e++)
 		b->cpp[0].p[e] = p[e];
 	for (f = 0; f < fdi; f++)
@@ -2333,13 +2341,18 @@ static int locus_compute(schbase *b, simplex *x) {
 	DBG(("\nLocus: computing possible solution\n"));
 
 #ifdef DEBUG
-	printf("Simplex of cell ix %d, sdi = %d, efdi = %d\n",x->ix, x->sdi, x->efdi);
+	{
+	unsigned int sum = 0;
+	for (f = 0; f <= x->sdi; f++)
+		sum += x->vix[f];
+	printf("Simplex of cell ix %d, sum 0x%x, sdi = %d, efdi = %d\n",x->ix, sum, x->sdi, x->efdi);
 	printf("Target val %s\n",icmPdv(fdi, b->v));
 	for (f = 0; f <= x->sdi; f++) {
 		int ix = x->vix[f], i;
 		float *fcb = s->g.a + ix * s->g.pss;	/* Pointer to base float of fwd cell */
 		double v[MXDO];
 		printf("Simplex vtx %d [cell ix %d] val %s\n",f,ix,icmPfv(fdi, fcb));
+	}
 	}
 #endif
 
@@ -2629,11 +2642,11 @@ double *xp		/* Return solution xp[sdi] */
 		lu_backsub(x->d_u, sdi, (int *)x->d_w, xp);
 
 		if ((wsrv = within_simplex(x, xp)) != 0) {
-			DBG(("Got solution at %s\n", icmPdv(di,xp)));
+			DBG(("Got solution at %s\n", icmPdv(sdi,xp)));
 			return wsrv;				/* OK, got solution */
 		}
 
-		DBG(("No solution\n"));
+		DBG(("No solution (not within simplex)\n"));
 		return 0;
 	}
 
@@ -2673,7 +2686,7 @@ double *xp		/* Return solution xp[sdi] */
 			DBG(("Got solution %s\n",icmPdv(di,xp)));
 			return wsrv;				/* OK, got solution */
 		}
-		DBG(("No solution\n"));
+		DBG(("No solution (not within simplex)\n"));
 		return 0;
 	}
 
@@ -2720,7 +2733,7 @@ double *xp		/* Return solution xp[sdi] */
 		DBG(("Got solution %s\n",icmPdv(di,xp)));
 		return wsrv;				/* OK, got solution */
 	}
-	DBG(("No solution\n"));
+	DBG(("No solution (not within simplex)\n"));
 	return 0;
 }
 

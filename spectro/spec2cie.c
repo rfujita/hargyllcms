@@ -432,6 +432,10 @@ main(int argc, char *argv[])
 		double XYZ[3];
 		double Lab[3];
 		char buf[100];
+							/* These are only set if fwa is needed */
+		xspect rmwsp;		/* Raw medium white spectrum */
+		xspect mwsp;		/* FWA compensated medium white spectrum */
+		double mwXYZ[3];	/* Media white XYZ */
 
 		if ((sidx = icg->find_field (icg, 0, "SAMPLE_ID")) < 0)
 			error ("Input file doesn't contain field SAMPLE_ID");
@@ -524,37 +528,13 @@ main(int argc, char *argv[])
 		}
 
 		if (fwacomp) {
-			double nw = 0.0;		/* Number of media white patches */
-			xspect mwsp;		/* Medium spectrum */
-			double mwXYZ[3];		/* Medium color */
-			instType itype;		/* Spectral instrument type */
-			xspect insp;		/* Instrument illuminant */
+			double nw = 0.0;	/* Number of media white patches */
 
-			mwsp = sp;      /* Struct copy */
-
-			if (inst_illum == icxIT_none) {
-					/* try to get from .ti3 file */
-				if ((ti = icg->find_kword (icg, 0, "TARGET_INSTRUMENT")) < 0)
-					error ("Can't find target instrument needed for FWA compensation");
-
-				if ((itype = inst_enum (icg->t[0].kdata[ti])) == instUnknown)
-					error ("Unrecognised target instrument '%s'",
-						   icg->t[0].kdata[ti]);
-
-				if (inst_illuminant (&insp, itype) != 0)
-					error ("Instrument doesn't have an FWA illuminent");
-			}
-			else if (inst_illum == icxIT_custom) {
-					insp = inst_cust_illum;		/* Structure copy */
-			}
-			else {
-					if (standardIlluminant(&insp, inst_illum, 0) != 0)
-							error ("Failed to find standard illuminant");
-			}
+			rmwsp = sp;      	/* Initial Struct copy */
 
 			/* Find the media white spectral reflectance */
-			for (j = 0; j < mwsp.spec_n; j++)
-				mwsp.spec[j] = 0.0;
+			for (j = 0; j < rmwsp.spec_n; j++)
+				rmwsp.spec[j] = 0.0;
 
 			/* Compute the mean of all the media white patches */
 			for (i = 0; i < npat; i++) {
@@ -590,30 +570,56 @@ main(int argc, char *argv[])
 
 				if (use) {
 					/* Read the spectral values for this patch */
-					for (j = 0; j < mwsp.spec_n; j++) {
-						mwsp.spec[j] += *((double *)icg->t[0].fdata[i][spi[j]]);
+					for (j = 0; j < rmwsp.spec_n; j++) {
+						rmwsp.spec[j] += *((double *)icg->t[0].fdata[i][spi[j]]);
 					}
 					nw++;
 				}
 			}
 
 			if (nw == 0.0) {
-				warning("Can't find a media white patch to init FWA");
+				warning("Can't find a media white patch to compute white reference");
 				warning("Using maximum of all spectral readings instead");
 
 				/* Track the maximum reflectance for any band to determine white. */
 				/* This might give bogus results if there is no white patch... */
 				for (i = 0; i < npat; i++) {
-					for (j = 0; j < mwsp.spec_n; j++) {
+					for (j = 0; j < rmwsp.spec_n; j++) {
 						double rv = *((double *)icg->t[0].fdata[i][spi[j]]);
-						if (rv > mwsp.spec[j])
-							mwsp.spec[j] = rv;
+						if (rv > rmwsp.spec[j])
+							rmwsp.spec[j] = rv;
 					}
 				}
 				nw++;
 			}
-			for (j = 0; j < mwsp.spec_n; j++) {
-				mwsp.spec[j] /= nw;	/* Compute average */
+			for (j = 0; j < rmwsp.spec_n; j++) {
+				rmwsp.spec[j] /= nw;	/* Compute average */
+			}
+			mwsp = rmwsp;		/* Structure copy */
+		}
+
+		if (fwacomp) {
+			instType itype;		/* Spectral instrument type */
+			xspect insp;		/* Instrument illuminant */
+
+			if (inst_illum == icxIT_none) {
+					/* try to get from .ti3 file */
+				if ((ti = icg->find_kword (icg, 0, "TARGET_INSTRUMENT")) < 0)
+					error ("Can't find target instrument needed for FWA compensation");
+
+				if ((itype = inst_enum (icg->t[0].kdata[ti])) == instUnknown)
+					error ("Unrecognised target instrument '%s'",
+						   icg->t[0].kdata[ti]);
+
+				if (inst_illuminant (&insp, itype) != 0)
+					error ("Instrument doesn't have an FWA illuminent");
+			}
+			else if (inst_illum == icxIT_custom) {
+					insp = inst_cust_illum;		/* Structure copy */
+			}
+			else {
+					if (standardIlluminant(&insp, inst_illum, 0) != 0)
+							error ("Failed to find standard illuminant");
 			}
 
 			/* (Note that sp and mwsp.norm is set to 100.0) */
@@ -625,6 +631,9 @@ main(int argc, char *argv[])
 				sp2cie->get_fwa_info(sp2cie, &FWAc);
 				printf("FWA content = %f\n",FWAc);
 			}
+
+			/* Create an FWA compensated white spectrum  and XYZ value */
+			sp2cie->sconvert (sp2cie, &rmwsp, mwXYZ, &mwsp);
 		}
 
 		for (i = 0; i < npat; i++) {

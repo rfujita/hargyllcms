@@ -5407,9 +5407,9 @@ static int getNormFunc(
 /* Set errc and return error number in underlying icc */
 /* Set warnc if there is clipping in the output values */
 /* 1 = input table, 2 = main clut, 3 = clut midpoin, 4 = midpoint interp, 5 = output table */
-int icmSetMultiLutTables (
-	int ntables,							/* Number of tables to be set, 1..3 */
-	icmLut *pp[3],							/* Pointer to array of Lut objects */
+int icmSetMultiLutTables(
+	int ntables,							/* Number of tables to be set, 1..n */
+	icmLut **pp,							/* Pointer to array of Lut objects */
 	int     flags,							/* Setting flags */
 	void   *cbctx,							/* Opaque callback context pointer value */
 	icColorSpaceSignature insig, 			/* Input color space */
@@ -5437,7 +5437,9 @@ int icmSetMultiLutTables (
 	double **clutTable2 = NULL;		/* Cell center values for ICM_CLUT_SET_APXLS */ 
 	int ii[MAX_CHAN];		/* Index value */
 	psh counter;			/* Pseudo-Hilbert counter */
-	double _iv[4 * MAX_CHAN], *iv = &_iv[MAX_CHAN], *ivn;	/* Real index value/table value */
+//	double _iv[4 * MAX_CHAN], *iv = &_iv[MAX_CHAN], *ivn;	/* Real index value/table value */
+	int maxchan;			/* Actual max of input and output */
+	double *_iv, *iv, *ivn;	/* Real index value/table value */
 	double imin[MAX_CHAN], imax[MAX_CHAN];
 	double omin[MAX_CHAN], omax[MAX_CHAN];
 	void (*ifromindex)(double *out, double *in);	/* Index to input color space function */
@@ -5506,6 +5508,15 @@ int icmSetMultiLutTables (
 		sprintf(icp->err,"icmLut_set_tables table entry to output colorspace function lookup failed");
 		return icp->errc = 1;
 	}
+
+	/* Allocate an array to hold the input and output values */
+	maxchan = p->inputChan > p->outputChan ? p->inputChan : p->outputChan;
+	if ((_iv = (double *) icp->al->malloc(icp->al, sizeof(double) * maxchan * (ntables+1)))
+	                                                                              == NULL) {
+		sprintf(icp->err,"icmLut_read: malloc() failed");
+		return icp->errc = 2;
+	}
+	iv = _iv + maxchan;		/* Allow for "index under" */
 
 	/* Setup input table value min-max */
 	if (inmin == NULL || imax == NULL) {
@@ -5642,6 +5653,7 @@ int icmSetMultiLutTables (
 	if (flags == ICM_CLUT_SET_APXLS) {
 		if ((clutTable2 = (double **) icp->al->calloc(icp->al,sizeof(double *), ntables)) == NULL) {
 			sprintf(icp->err,"icmLut_set_tables malloc of cube center array failed");
+			icp->al->free(icp->al, _iv);
 			return icp->errc = 1;
 		}
 		for (tn = 0; tn < ntables; tn++) {
@@ -5649,6 +5661,7 @@ int icmSetMultiLutTables (
 			                                               p->clutTable_size)) == NULL) {
 				for (--tn; tn >= 0; tn--)
 					icp->al->free(icp->al, clutTable2[tn]);
+				icp->al->free(icp->al, _iv);
 				icp->al->free(icp->al, clutTable2);
 				sprintf(icp->err,"icmLut_set_tables malloc of cube center array failed");
 				return icp->errc = 1;
@@ -5826,7 +5839,7 @@ int icmSetMultiLutTables (
 			}
 
 			for (i = 0; i < (1 << p->inputChan); i++) { /* For corners of cube */
-				double sc = 1.0;		/* Scale factor for edge nodes */
+				double sc = 1.0;		/* Scale factor for non-edge nodes */
 
 				/* Don't distribute error to edge nodes since there may */
 				/* an expectation that they have precicely set values */
@@ -5911,6 +5924,8 @@ int icmSetMultiLutTables (
 				pn->outputTable[f * pn->outputEnt + n] = iv[f];
 		}
 	}
+
+	icp->al->free(icp->al, _iv);
 
 	icp->warnc = 0;
 	if (clip) {
@@ -12986,6 +13001,18 @@ void icmMulBy2x2(double out[2], double mat[2][2], double in[2]) {
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - */
 
+/* Copy a 3x4 transform matrix */
+void icmCpy3x4(double dst[3][4], double src[3][4]) {
+	int i, j;
+
+	for (j = 0; j < 3; j++) {
+		for (i = 0; i < 4; i++)
+			dst[j][i] = src[j][i];
+	}
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - */
+
 /* Multiply 3 array by 3x4 transform matrix */
 void icmMul3By3x4(double out[3], double mat[3][4], double in[3]) {
 	double tt[3];
@@ -16102,18 +16129,18 @@ icmLuBase *p
 	icp->al->free(icp->al, p);
 }
 
-static icmLuBase *
-new_icmLuLut(
+icmLuBase *
+icc_new_icmLuLut(
 	icc                   *icp,
 	icTagSignature        ttag,			/* Target Lut tag */
     icColorSpaceSignature inSpace,		/* Native Input color space */
     icColorSpaceSignature outSpace,		/* Native Output color space */
-    icColorSpaceSignature pcs,			/* Native PCS */
+    icColorSpaceSignature pcs,			/* Native PCS (from header) */
     icColorSpaceSignature e_inSpace,	/* Effective Input color space */
     icColorSpaceSignature e_outSpace,	/* Effective Output color space */
     icColorSpaceSignature e_pcs,		/* Effective PCS */
-	icRenderingIntent     intent,		/* Rendering intent */
-	icmLookupFunc         func			/* Functionality requested */
+	icRenderingIntent     intent,		/* Rendering intent (For absolute) */
+	icmLookupFunc         func			/* Functionality requested (for icmLuSpaces()) */
 ) {
 	icmLuLut *p;
 
@@ -16508,14 +16535,14 @@ static icmLuBase* icc_get_luobj (
 
 					if (order != icmLuOrdRev) {
 						/* Try Lut type lookup with the chosen intent first */
-						if ((luobj = new_icmLuLut(p, ttag,
+						if ((luobj = icc_new_icmLuLut(p, ttag,
 						     p->header->colorSpace, pcs, pcs,
 						     p->header->colorSpace, e_pcs, e_pcs,
 						     intent, func)) != NULL)
 							break;
 	
 						/* Try the fallback tag */
-						if ((luobj = new_icmLuLut(p, fbtag,
+						if ((luobj = icc_new_icmLuLut(p, fbtag,
 						     p->header->colorSpace, pcs, pcs,
 						     p->header->colorSpace, e_pcs, e_pcs,
 						     fbintent, func)) != NULL)
@@ -16551,14 +16578,14 @@ static icmLuBase* icc_get_luobj (
 							break;
 	
 						/* Try Lut type lookup last */
-						if ((luobj = new_icmLuLut(p, ttag,
+						if ((luobj = icc_new_icmLuLut(p, ttag,
 						     p->header->colorSpace, pcs, pcs,
 						     p->header->colorSpace, e_pcs, e_pcs,
 						     intent, func)) != NULL)
 							break;
 	
 						/* Try the fallback tag */
-						if ((luobj = new_icmLuLut(p, fbtag,
+						if ((luobj = icc_new_icmLuLut(p, fbtag,
 						     p->header->colorSpace, pcs, pcs,
 						     p->header->colorSpace, e_pcs, e_pcs,
 						     fbintent, func)) != NULL)
@@ -16610,14 +16637,14 @@ static icmLuBase* icc_get_luobj (
 
 					if (order != icmLuOrdRev) {
 						/* Try Lut type lookup first */
-						if ((luobj = new_icmLuLut(p, ttag,
+						if ((luobj = icc_new_icmLuLut(p, ttag,
 						     pcs, p->header->colorSpace, pcs,
 						     e_pcs, p->header->colorSpace, e_pcs,
 						     intent, func)) != NULL)
 							break;
 
 						/* Try the fallback Lut */
-						if ((luobj = new_icmLuLut(p, fbtag,
+						if ((luobj = icc_new_icmLuLut(p, fbtag,
 						     pcs, p->header->colorSpace, pcs,
 						     e_pcs, p->header->colorSpace, e_pcs,
 						     fbintent, func)) != NULL)
@@ -16652,14 +16679,14 @@ static icmLuBase* icc_get_luobj (
 							break;
 	
 						/* Try Lut type lookup last */
-						if ((luobj = new_icmLuLut(p, ttag,
+						if ((luobj = icc_new_icmLuLut(p, ttag,
 						     pcs, p->header->colorSpace, pcs,
 						     e_pcs, p->header->colorSpace, e_pcs,
 						     intent, func)) != NULL)
 							break;
 
 						/* Try the fallback Lut */
-						if ((luobj = new_icmLuLut(p, fbtag,
+						if ((luobj = icc_new_icmLuLut(p, fbtag,
 						     pcs, p->header->colorSpace, pcs,
 						     e_pcs, p->header->colorSpace, e_pcs,
 						     fbintent, func)) != NULL)
@@ -16711,7 +16738,7 @@ static icmLuBase* icc_get_luobj (
 
 					if (order != icmLuOrdRev) {
 						/* Try Lut type lookup first */
-						if ((luobj = new_icmLuLut(p, ttag,
+						if ((luobj = icc_new_icmLuLut(p, ttag,
 						     p->header->colorSpace, pcs, pcs,
 						     p->header->colorSpace, e_pcs, e_pcs,
 						     intent, func)) != NULL) {
@@ -16747,7 +16774,7 @@ static icmLuBase* icc_get_luobj (
 							break;
 	
 						/* Try Lut type lookup last */
-						if ((luobj = new_icmLuLut(p, ttag,
+						if ((luobj = icc_new_icmLuLut(p, ttag,
 						     p->header->colorSpace, pcs, pcs,
 						     p->header->colorSpace, e_pcs, e_pcs,
 						     intent, func)) != NULL)
@@ -16781,7 +16808,7 @@ static icmLuBase* icc_get_luobj (
 
 					if (order != icmLuOrdRev) {
 						/* Try Lut type lookup first */
-						if ((luobj = new_icmLuLut(p, ttag,
+						if ((luobj = icc_new_icmLuLut(p, ttag,
 						     pcs, p->header->colorSpace, pcs,
 						     e_pcs, p->header->colorSpace, e_pcs,
 						     intent, func)) != NULL)
@@ -16816,7 +16843,7 @@ static icmLuBase* icc_get_luobj (
 							break;
 	
 						/* Try Lut type lookup last */
-						if ((luobj = new_icmLuLut(p, ttag,
+						if ((luobj = icc_new_icmLuLut(p, ttag,
 						     pcs, p->header->colorSpace, pcs,
 						     e_pcs, p->header->colorSpace, e_pcs,
 						     intent, func)) != NULL)
@@ -16853,7 +16880,7 @@ static icmLuBase* icc_get_luobj (
 
 #endif
 					/* If the target tag exists, and it is a Lut */
-					luobj = new_icmLuLut(p, icSigGamutTag,
+					luobj = icc_new_icmLuLut(p, icSigGamutTag,
 					     pcs, icSigGrayData, pcs,
 					     e_pcs, icSigGrayData, e_pcs,
 					     intent, func);
@@ -16884,7 +16911,7 @@ static icmLuBase* icc_get_luobj (
 					}
 
 					/* If the target tag exists, and it is a Lut */
-					luobj = new_icmLuLut(p, ttag,
+					luobj = icc_new_icmLuLut(p, ttag,
 					     pcs, pcs, pcs,
 					     e_pcs, e_pcs, e_pcs,
 					     intent, func);
@@ -16913,7 +16940,7 @@ static icmLuBase* icc_get_luobj (
 			switch (func) {
 		    	case icmFwd:	/* Device to PCS (== Device) */
 
-					luobj = new_icmLuLut(p, icSigAToB0Tag,
+					luobj = icc_new_icmLuLut(p, icSigAToB0Tag,
 					     p->header->colorSpace, pcs, pcs,
 					     p->header->colorSpace, pcs, pcs,
 					     intent, func);
@@ -16921,7 +16948,7 @@ static icmLuBase* icc_get_luobj (
 
 		    	case icmBwd:	/* PCS (== Device) to Device */
 
-					luobj = new_icmLuLut(p, icSigBToA0Tag,
+					luobj = icc_new_icmLuLut(p, icSigBToA0Tag,
 					     pcs, p->header->colorSpace, pcs,
 					     pcs, p->header->colorSpace, pcs,
 					     intent, func);
@@ -16950,7 +16977,7 @@ static icmLuBase* icc_get_luobj (
 			switch (func) {
 		    	case icmFwd:	/* PCS (== Device) to PCS */
 
-					luobj = new_icmLuLut(p, icSigAToB0Tag,
+					luobj = icc_new_icmLuLut(p, icSigAToB0Tag,
 					     p->header->colorSpace, pcs, pcs,
 					     e_pcs, e_pcs, e_pcs,
 					     intent, func);
@@ -16958,7 +16985,7 @@ static icmLuBase* icc_get_luobj (
 
 		    	case icmBwd:	/* PCS to PCS (== Device) */
 
-					luobj = new_icmLuLut(p, icSigBToA0Tag,
+					luobj = icc_new_icmLuLut(p, icSigBToA0Tag,
 					     pcs, p->header->colorSpace, pcs,
 					     e_pcs, e_pcs, e_pcs,
 					     intent, func);
@@ -17153,6 +17180,7 @@ icmAlloc *al			/* Memory allocator */
 	p->check_id      = icc_check_id;
 	p->get_tac       = icm_get_tac;
 	p->get_luobj     = icc_get_luobj;
+	p->new_clutluobj = icc_new_icmLuLut;
 
 #if defined(__IBMC__) && defined(_M_IX86)
 	_control87(EM_UNDERFLOW, EM_UNDERFLOW);
