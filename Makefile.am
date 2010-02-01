@@ -22,4 +22,7 @@ SUBDIRS =						\
 	xicc						\
 	tools
 
+snapshot:
+	$(MAKE) dist distdir=$(PACKAGE)-$(VERSION)-`date +"%Y%m%d"`
+
 EXTRA_DIST = Readme.txt ttbd.txt log.txt legal.sh
