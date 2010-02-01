@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-refdir = $(datadir)/color/argyll
+refdir = $(datadir)/color/argyll/ref
 
 ref_DATA =						\
 	3dap5k.sp					\

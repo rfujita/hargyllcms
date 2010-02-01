@@ -1,4 +1,4 @@
-AC_INIT([hargyll], [1.1.0])
+AC_INIT([hargyllcms], [1.1.0])
 AM_INIT_AUTOMAKE([1.9 foreign])
 
 AC_PROG_CC
