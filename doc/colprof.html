@@ -125,15 +125,15 @@ total ink limit, 0
 black ink limit, 0 - 100% (default from .ti3)</span><br
  style="font-family: monospace;">
 <span style="font-family: monospace;">&nbsp;</span><a
- style="font-family: monospace;" href="#a">-a lxXgsGS</a><span
- style="font-family: monospace;"> &nbsp;&nbsp; &nbsp; &nbsp;&nbsp;
-Algorithm type override</span><br style="font-family: monospace;">
+ style="font-family: monospace;" href="#a">-a lxXgsmGS</a><span
+ style="font-family: monospace;"> &nbsp;&nbsp; &nbsp; &nbsp; Algorithm
+type override</span><br style="font-family: monospace;">
 <span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; l = Lab cLUT (def.), x = XYZ cLUT, X
 = display XYZ cLUT + matrix</span><br style="font-family: monospace;">
 <span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; g = gamma+matrix, s = shaper+matrix,</span><br
- style="font-family: monospace;">
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; g = gamma+matrix, s = shaper+matrix,
+m = matrix only,</span><br style="font-family: monospace;">
 <span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; G = single gamma+matrix,
 S = single shaper+matrix</span><br style="font-family: monospace;">
@@ -273,12 +273,17 @@ Enumerated Viewing Conditions:</span><br style="font-family: monospace;">
 <span style="font-family: monospace;"></span></small><small><span
  style="font-family: monospace;">&nbsp;
 &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;&nbsp;
-&nbsp; pp - Practical Reflection Print</span><br
+&nbsp; pp - Practical Reflection Print (ISO-3664 P2)</span><br
  style="font-family: monospace;">
 <span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-&nbsp; &nbsp; &nbsp;&nbsp; &nbsp; pe - Print evaluation environment</span><br
+&nbsp; &nbsp; &nbsp;&nbsp; &nbsp; pe - Print evaluation environment
+(CIE 116-1995)<br>
+</span></small><small><span style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp; &nbsp; &nbsp;&nbsp; &nbsp; pc - Critical print evaluation
+environment (ISO-3664 P1)</span></small><br
  style="font-family: monospace;">
-<span style="font-family: monospace;">&nbsp;&nbsp; &nbsp; &nbsp;&nbsp;
+<small><span style="font-family: monospace;"></span><span
+ style="font-family: monospace;">&nbsp;&nbsp; &nbsp; &nbsp;&nbsp;
 &nbsp;&nbsp;
 &nbsp; &nbsp; &nbsp; mt - Monitor in typical work environment</span><br
  style="font-family: monospace;">
@@ -649,6 +654,11 @@ device channels. The latter may be needed with certain applications
 that will not accept
 different shaper curves for each channel.<br>
 <br>
+The <span style="font-weight: bold;">-am</span> option will create a
+matrix profile with linear (i.e. gamma = 1.0) curves. This may be
+useful in creating a profile for a device that is known to have a
+perfectly linear response, such as a camera in RAW mode.<br>
+<br>
 <a name="u"></a> <span style="font-weight: bold;">-u:</span> cLUT
 style
 input profiles will normally be created
@@ -735,7 +745,7 @@ observer<br>
 <br>
 Note that if an observer other than 1931 2 degree is chosen, the
 resulting ICC profile will not be standard, and cannot be freely
-interchanged with other profiles that that us the standard 1931 2
+interchanged with other profiles that that use the standard 1931 2
 degree
 observer. Profiles should only be linked with other profiles that have
 the same illuminant and observer. The <b>1978_2</b> observer or <span
@@ -956,7 +966,7 @@ a better colorspace to do gamut mapping in. The viewing conditions
 allow
 the conversion into appearance space to take account of how color will
 be
-seen under particular viewing conditions. <br>
+seen under particular viewing conditions.<br>
 <br>
 Viewing conditions can be specified in two basic ways. One is to select
 from the list of "pre canned", enumerated viewing conditions, choosing

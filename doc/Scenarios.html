@@ -689,6 +689,23 @@ generally be used:<br>
 Make sure you check the delta E report at the end of the profile
 creation, to see if the profile is behaving reasonably.<br>
 <br>
+<br>
+If profiling a <span style="font-weight: bold;">camera</span> in <span
+ style="font-weight: bold;">RAW</span> mode, then there may be some
+advantage in creating a pure matrix only profile, in which it is
+assumed that the camera response is completely linear. This may reduce
+extrapolation artefacts. If setting the white point will be done in
+some application, then it may also be an advantage to use the <span
+ style="font-weight: bold;">-u</span> flag and avoid setting the white
+point to that of the profile chart:<br>
+<br>
+<a href="colprof.html">colprof</a> <a href="colprof.html#v">-v</a> <a
+ href="colprof.html#E">-D"Camera"</a>
+<a href="colprof.html#q">-qm</a> <a href="colprof.html#a">-am</a>
+<a href="colprof.html#u">-u</a>
+<a href="colprof.html#p1">scanner</a><br>
+<br>
+<br>
 <hr size="2" width="100%">
 <h3><a name="PP1"></a>Profiling Printers<br>
 </h3>
@@ -712,7 +729,13 @@ to use ?</li>
   <li>What information do I already have about how the device behaves ?</li>
 </ul>
 Most printers running through simple drivers will appear as if they are
-RGB devices. Other drivers will drive a printer more directly, and will
+RGB devices. In fact there is no such
+thing as a real RGB printer, since printers use white media and the
+colorant must subtract from the light reflected on it to create color,
+but the printer itself turns the incoming RGB into the native print
+colorspace, so for this reason we will tell targen to use the
+"Print RGB" colorspace, so that it knows that it's really a subtractive
+media. Other drivers will drive a printer more directly, and will
 expect a CMYK profile. [Currently Argyll is not capable of creating an
 ICC profile for devices with more colorants than CMYK. When this
 capability is introduced, it will by creating an additional separation
@@ -720,15 +743,17 @@ profile which then allows the printer to be treated as a CMY or CMYK
 printer.] One way of telling what sort
 of profile is expected for your device is to examine an existing
 profile for
-that device using <a href="iccdump.html">iccdump</a>.<br>
+that device using <a href="http://www.argyllcms.com/doc/iccdump.html">iccdump</a>.<br>
 <br>
 The number of test patches will depend somewhat on what quality profile
-you want to make, as well as the effort needed to read the number of
+you want to make, how well behaved the printer is, as well as the
+effort needed to read the number of
 test values. Generally it is convenient to fill a certain paper size
 with the maximum
 number of test values that will fit.<br>
 <br>
-At a minimum, for an RGB device, a few hundred values are needed.
+At a minimum, for an "RGB" device, a few hundred values are needed
+(400-1000).
 For high quality CMYK profiles, 1000-3000 is not an unreasonable number
 of
 patches.<br>
@@ -741,10 +766,11 @@ high quality Lut based profile, then it might be worthwhile to make up
 a smaller, preliminary shaper/matrix profile using a few hundred test
 points, before embarking on testing the device with several thousand.<br>
 <br>
-The documentation for the <a href="targen.html">targen</a> utility
+The documentation for the <a
+ href="http://www.argyllcms.com/doc/targen.html">targen</a> utility
 lists
 a
-<a href="targen.html#Table">table</a> of
+<a href="http://www.argyllcms.com/doc/targen.html#Table">table</a> of
 paper
 sizes and number of &nbsp;patches for typical situations.<br>
 <br>
@@ -774,22 +800,22 @@ combinations of any two primary colorants) will not be able to reach
 full strength.<br>
 <br>
 Once an ink limit is used in printing the characterization test chart
-for a device, it becomes a critical parameter<br>
-in knowing what the characterized gamut of the device is. If after
-printing the test chart, a greater ink limit<br>
-were to be used, the the software would effectively be extrapolating
-the device behaviour at total ink levels<br>
-beyond that used in the test chart, leading to inaccuracies.<br>
+for a device, it becomes a critical parameter in knowing what the
+characterized gamut of the device is. If after
+printing the test chart, a greater ink limit were to be used, the the
+software would effectively be extrapolating
+the device behaviour at total ink levels beyond that used in the test
+chart, leading to inaccuracies.<br>
 <br>
 Generally in Argyll, the ink limit is established when creating the
-test chart values, and then carried through the<br>
-profile making process automatically. Once the profile has been made
+test chart values, and then carried through the profile making process
+automatically. Once the profile has been made
 however, the ink limit is no longer recorded, and you, the user, will
 have to keep track of it if the ICC profile is used in any program than
 needs to know the usable gamut of the device.<br>
 <br>
 <br>
-Lets consider two devices in our examples, "PrinterA" which is an RGB
+Lets consider two devices in our examples, "PrinterA" which is an "RGB"
 device, and "PrinterB" which is CMYK, and has a target ink limit of
 250%.
 <br>
@@ -799,7 +825,7 @@ independent
 of the characteristics of the particular device:<br>
 <br>
 <a href="targen.html">targen</a> <a href="targen.html#v">-v</a> &nbsp;<a
- href="targen.html#d">-d3</a> <a href="targen.html#f">-f1053</a> <a
+ href="targen.html#d">-d2</a> <a href="targen.html#f">-f1053</a> <a
  href="targen.html#p1">PrinterA</a><br>
 <br>
 <a href="targen.html">targen</a> <a href="targen.html#v">-v</a> &nbsp;<a
@@ -817,7 +843,7 @@ values that will more efficiently sample the device response, then the
 following would achieve this:<u><br>
 </u><br>
 <a href="targen.html">targen</a> <a href="targen.html#v">-v</a> &nbsp;<a
- href="targen.html#d">-d3</a> <a href="targen.html#f">-f1053</a> <a
+ href="targen.html#d">-d2</a> <a href="targen.html#f">-f1053</a> <a
  href="targen.html#c">-c OldPrinterA</a> <a href="targen.html#A">-A.8</a>
 <a href="targen.html#p1">PrinterA</a><br>
 <br>

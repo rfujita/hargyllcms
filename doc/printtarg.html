@@ -131,8 +131,12 @@ patch indexing pattern (Default = "0-9,@-9,@-9;1-999")</span><br
  style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Set a page margin in
 mm (default 6.0 mm)<br>
-</span></small><small><span style="font-family: monospace;">&nbsp;<a
- href="#P">-P</a>
+</span></small><small><span style="font-family: monospace;">&nbsp;</span><a
+ style="font-family: monospace;" href="#M">-M margin</a><span
+ style="font-family: monospace;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; </span></small><small><span
+ style="font-family: monospace;">Set a page margin in mm and include it
+in TIFF</span><span style="font-family: monospace;"></span></small><br>
+<small><span style="font-family: monospace;">&nbsp;<a href="#P">-P</a>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 Don't limit strip length</span></small><br>
 <small><span style="font-family: monospace;">&nbsp;<a href="#L">-L</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
@@ -475,6 +479,12 @@ each page. A TIFF chart will be the size of the paper minus the margin,
 so that it
 can be placed on a page that size without cropping or inadvertent
 scaling.<br>
+<br>
+<a name="M"></a> The <b>-M</b> parameter sets the page margin for all
+sides, but for a TIFF chart will the margin will be <span
+ style="font-weight: bold;">included</span> in the raster, meaning that
+the TIFF will have to be printed&nbsp; right to the edge of the paper,
+or on paper larger than the raster size.<br>
 <br>
 <a name="P"></a> The <b>-P</b> flag disables any normal limiting of
 strip length that would normally be imposed due to guide or instrument

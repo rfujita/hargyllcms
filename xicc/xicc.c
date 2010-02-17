@@ -1572,7 +1572,7 @@ double *wp			/* Provide white point if xicc is NULL */
 
 		no = -1;
 		if (vc != NULL) {
-			vc->desc = "  d: Default Viewing Condition";
+			vc->desc = "  d - Default Viewing Condition";
 			vc->Ev = vc_average;	/* Average viewing conditions */
 			vc->La = 50.0;			/* Practical to Good lighting */
 			vc->Yb = 0.2;			/* Grey world */
@@ -1584,7 +1584,7 @@ double *wp			/* Provide white point if xicc is NULL */
 
 		no = 0;
 		if (vc != NULL) {
-			vc->desc = " pp - Practical Reflection Print";
+			vc->desc = " pp - Practical Reflection Print (ISO-3664 P2)";
 			vc->Ev = vc_average;	/* Average viewing conditions */
 			vc->La = 32.0;			/* Use a practical print evaluation number */
 			vc->Yb = 0.2;			/* Grey world */
@@ -1596,7 +1596,7 @@ double *wp			/* Provide white point if xicc is NULL */
 
 		no = 1;
 		if (vc != NULL) {
-			vc->desc = " pe - Print evaluation environment";
+			vc->desc = " pe - Print evaluation environment (CIE 116-1995)";
 			vc->Ev = vc_average;	/* Average viewing conditions */
 			vc->La = 64.0;			/* Good */
 			vc->Yb = 0.2;			/* Grey world */
@@ -1604,6 +1604,18 @@ double *wp			/* Provide white point if xicc is NULL */
 		}
 	}
 	else if (no == 2
+	 || (as != NULL && stricmp(as,"pc") == 0)) {
+
+		no = 1;
+		if (vc != NULL) {
+			vc->desc = " pc - Critical print evaluation environment (ISO-3664 P1)";
+			vc->Ev = vc_average;	/* Average viewing conditions */
+			vc->La = 127.0;			/* Critical */
+			vc->Yb = 0.2;			/* Grey world */
+			vc->Yf = 0.01;			/* 1% flare */
+		}
+	}
+	else if (no == 3
 	 || (as != NULL && stricmp(as,"mt") == 0)) {
 
 		no = 2;
@@ -1615,7 +1627,7 @@ double *wp			/* Provide white point if xicc is NULL */
 			vc->Yf = 0.02;			/* 2% flare */
 		}
 	}
-	else if (no == 3
+	else if (no == 4
 	 || (as != NULL && stricmp(as,"mb") == 0)) {
 
 		no = 3;
@@ -1627,7 +1639,7 @@ double *wp			/* Provide white point if xicc is NULL */
 			vc->Yf = 0.02;			/* 2% flare */
 		}
 	}
-	else if (no == 4
+	else if (no == 5
 	 || (as != NULL && stricmp(as,"md") == 0)) {
 
 		no = 4;
@@ -1639,7 +1651,7 @@ double *wp			/* Provide white point if xicc is NULL */
 			vc->Yf = 0.01;			/* 1% flare */
 		}
 	}
-	else if (no == 5
+	else if (no == 6
 	 || (as != NULL && stricmp(as,"jm") == 0)) {
 
 		no = 5;
@@ -1651,7 +1663,7 @@ double *wp			/* Provide white point if xicc is NULL */
 			vc->Yf = 0.01;			/* 1% flare */
 		}
 	}
-	else if (no == 6
+	else if (no == 7
 	 || (as != NULL && stricmp(as,"jd") == 0)) {
 
 		no = 6;
@@ -1663,7 +1675,7 @@ double *wp			/* Provide white point if xicc is NULL */
 			vc->Yf = 0.01;			/* 1% flare ? */
 		}
 	}
-	else if (no == 7
+	else if (no == 8
 	 || (as != NULL && stricmp(as,"pcd") == 0)) {
 
 		no = 7;
@@ -1675,7 +1687,7 @@ double *wp			/* Provide white point if xicc is NULL */
 			vc->Yf = 0.00;			/* 0% flare */
 		}
 	}
-	else if (no == 8
+	else if (no == 9
 	 || (as != NULL && stricmp(as,"ob") == 0)) {
 
 		no = 8;
@@ -1687,7 +1699,7 @@ double *wp			/* Provide white point if xicc is NULL */
 			vc->Yf = 0.00;			/* 0% flare */
 		}
 	}
-	else if (no == 9
+	else if (no == 10
 	 || (as != NULL && stricmp(as,"cx") == 0)) {
 
 		no = 9;
@@ -1962,9 +1974,6 @@ char *as				/* Alias string selector, NULL for none */
 		gmi->gamcpf  = 1.0;			/* Full gamut compression */
 		gmi->gamexf  = 0.0;			/* No gamut expansion */
 		gmi->gamcknf  = 0.7;		/* Moderate Sigma knee in gamut compress */
-// ~~888
-//		gmi->gamcknf  = 0.0;		/* Moderate Sigma knee in gamut compress */
-//		gmi->gamcknf  = 1.0;		/* Moderate Sigma knee in gamut compress */
 		gmi->gamxknf  = 0.0;		/* No knee in gamut expand */
 		gmi->gampwf  = 1.0;			/* Full Perceptual surface weighting factor */
 		gmi->gamswf  = 0.0;			/* No Saturation surface weighting factor */

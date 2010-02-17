@@ -24,6 +24,11 @@
 	Would be nice to be able to generate secondary
 	color ramps (ie. CMY for RGB space, RGB for CMYK space.)
 
+	Would be nice to be able to take a previous .ti3 and
+	then suppliment the measured patches. Would have to add another
+	set of measurement columns to .ti1 & .ti2 to carry the
+	already measured values through ? 
+
 	Using adaptive patch creation for grey colorspace is broken.
 	This should be fixed.
 

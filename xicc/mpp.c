@@ -927,7 +927,7 @@ double       detail		/* gamut detail level, 0.0 = def */
 	if (detail == 0.0)
 		detail = 10.0;
 
-	gam = new_gamut(detail, 0);		/* Lab only at the moment */
+	gam = new_gamut(detail, 0, 0);		/* Lab only at the moment */
 
 	/* Explore the gamut by itterating through */
 	/* it with sample points in device space. */

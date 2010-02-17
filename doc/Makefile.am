@@ -102,6 +102,7 @@ doc_DATA =						\
 	refine.html					\
 	revfix.html					\
 	scanin.html					\
+	specplot.html					\
 	Scenarios.html					\
 	sepgen.html					\
 	SG.jpg						\
