@@ -831,7 +831,7 @@ main(int argc, char *argv[]) {
 
 	/* Create a binary file containing the firmware */
 	/* that drivers for the Spyder 2 can use */
-	strcpy(scratch_name, "/var/lib/argyll/");
+	strcpy(scratch_name, exe_path);
 	strcat(scratch_name, bin_name);
 	write_bin(scratch_name, fbuf, fsize, verb);
 
