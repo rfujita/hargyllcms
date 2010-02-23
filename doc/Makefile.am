@@ -8,7 +8,7 @@ doc_DATA =						\
 	average.html					\
 	cal_format.html					\
 	calvschar.html					\
-	cb2cgats.html					\
+	cb2ti3.html					\
 	cctiff.html					\
 	ChangesSummary.html				\
 	chartread.html					\
@@ -76,27 +76,27 @@ doc_DATA =						\
 	Kgraph7.jpg					\
 	Kgraph8.jpg					\
 	Kparams.jpg					\
-	kodak2cgats.html				\
+	kodak2ti3.html					\
 	LabSteps.jpg					\
 	License2.txt					\
 	License3.txt					\
 	License.txt					\
 	Limitations.html				\
-	logo2cgats.html					\
 	LSDC.jpg					\
-	MinorUtilities.html				\
+	MinorTools.html					\
 	monitorcontrols.html				\
 	mox.jpg						\
 	moxxr.jpg					\
 	mppcheck.html					\
 	mpplu.html					\
-	mpprof.html					\
+	mppprof.html					\
 	Organisation.html				\
 	Overview.html					\
 	Performance.html				\
 	printcal.html					\
 	printtarg.html					\
 	profcheck.html					\
+	txt2ti3.html					\
 	Q60.jpg						\
 	ReadMe.txt					\
 	refine.html					\
@@ -109,7 +109,7 @@ doc_DATA =						\
 	sl.jpg						\
 	Source.html					\
 	spec2cie.html					\
-	splitcgats.html					\
+	splitti3.html					\
 	spotread.html					\
 	spyd2en.html					\
 	Spyd2.jpg					\
