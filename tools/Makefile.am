@@ -40,8 +40,8 @@ PROFILE_LDADD = 			  		\
 	../lib/libargyll.a ../icc/libicc.a 	\
 	$(TIFF_LIBS) $(X_LIBS) -lusb
 
-bin_PROGRAMS += simpprof kodak2ti3 cb2ti3 logo2ti3 splitti3	\
-	profcheck invprofcheck mpprof mppcheck verify colprof printcal	\
+bin_PROGRAMS += simpprof kodak2ti3 cb2ti3 splitti3	\
+	profcheck invprofcheck mppprof mppcheck verify colprof printcal	\
 	applycal sepgen
 
 simpprof_SOURCES = ../profile/simpprof.c
@@ -53,9 +53,6 @@ kodak2ti3_LDADD = $(PROFILE_LDADD)
 cb2ti3_SOURCES = ../profile/cb2ti3.c
 cb2ti3_LDADD = $(PROFILE_LDADD)
 
-logo2ti3_SOURCES = ../profile/logo2ti3.c
-logo2ti3_LDADD = $(PROFILE_LDADD)
-
 splitti3_SOURCES = ../profile/splitti3.c
 splitti3_LDADD = $(PROFILE_LDADD)
 
@@ -65,8 +62,8 @@ profcheck_LDADD = $(PROFILE_LDADD)
 invprofcheck_SOURCES = ../profile/invprofcheck.c
 invprofcheck_LDADD = $(PROFILE_LDADD)
 
-mpprof_SOURCES = ../profile/mpprof.c
-mpprof_LDADD = $(PROFILE_LDADD)
+mppprof_SOURCES = ../profile/mppprof.c
+mppprof_LDADD = $(PROFILE_LDADD)
 
 mppcheck_SOURCES = ../profile/mppcheck.c
 mppcheck_LDADD = $(PROFILE_LDADD)
