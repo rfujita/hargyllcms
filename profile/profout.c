@@ -1806,7 +1806,7 @@ make_output_icc(
 			if (ipname != NULL) {		/* There is a source profile to determine gamut mapping */
 
 				/* Open up the profile for reading */
-				if ((src_icco = read_embeded_icc(ipname)) == NULL)
+				if ((src_icco = read_embedded_icc(ipname)) == NULL)
 					error ("Can't open file '%s'",ipname);
 
 				/* Wrap with an expanded icc */

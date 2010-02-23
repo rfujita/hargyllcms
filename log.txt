@@ -2,8 +2,36 @@
 Argyll CMS change log
 =====================
 
-Version 1.1.1 Beta
+Version 1.1.1 21 February 2010
 -------------
+
+*	Altered xpsect FWA code to reduce overshoot artefacts due to filetering.
+
+*	Updated ref/CMP_Digital_Target-3.cht as it seems that the reference
+	chart has columns labeled "2A - 2D" rather than the "AA - AD" that
+	is actually printed on the chart...
+
+*	Changed dispcal and dispread so that a request for projector
+	mode falls back to display mode if the instrument doesn't 
+	support a projector mode.
+
+*	Changed printcal so that it will create .AMP file with more
+	than 4 channels.
+	Also fixed up plotting to plot up to 10 channels.
+
+*   Renamed the following tools:
+
+	cb2cgats    -> cb2ti3
+	kodak2cgats -> kodak2ti3
+	logo2cgats  -> txt2ti3
+	splitcgats  -> splitti3
+	mpprof      -> mppprof
+
+*	Modified scanin so that it ignores any alpha channels
+	in the input .tiff file.
+
+*	Change spotread so that it takes spectral readings by
+	default so that FWA comensation readings can be used.
 
 *	Changed link/collink to apply Y to L* curve if the input or output
 	space is XYZ. Fixed the Y to L* scaling to make sure it only
@@ -28,13 +56,14 @@ Version 1.1.1 Beta
 
 *	Modified libusb/55-Argyll.rules for better compatibility
 	with systems that have ACL installed but no ConsoleKit.
+	Also set ID_VENDOR and ID_MODEL using usb-db
 
 *	Added matrix only/linear algorithm option to
 	profile/colprof, for raw camera profiling.
 
 *	Fixed bug in input matrix profiles introduced by the XYZ cLUT
-	display matrix profile change, where the correct white point wasn't
-	being written.
+	display matrix profile change, where the correct white and
+	black point wern't being written.
 
 *	Changed tiffgamut to use one pass gamut hull finding,
 	since this seems to be more reliable on the odd shaped
@@ -48,7 +77,7 @@ Version 1.1.1 Beta
 *	Fixed bug in profile/colprof -u, this wasn't being
 	applied properly to matrix profiles.
 
-*	Fixed several bugs in imdi code related to 64 bits.
+*	Fixed several build bugs in imdi code related to 64 bits.
 	The 64 bit code was sometimes being compiled on non-native 64
 	bit architectures, and not being compiled on native 64 bit
 	architectures. The table setup code was not handling 64 bit

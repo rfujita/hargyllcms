@@ -136,8 +136,8 @@ void usage(char *diag, ...) {
 	fprintf(stderr," -n              Don't preserve device linearization curves in result\n");
 	fprintf(stderr," -f              Special :- Force neutral colors to be K only output\n");
 	fprintf(stderr," -fk             Special :- Force K only neutral colors to be K only output\n");
-	fprintf(stderr," -fcmy           Special :- Force 100%% C,M or Y only to stay pure \n");
 	fprintf(stderr," -F              Special :- Force all colors to be K only output\n");
+	fprintf(stderr," -fcmy           Special :- Force 100%% C,M or Y only to stay pure \n");
 	fprintf(stderr," -p absprof      Include abstract profile in link\n");
 	fprintf(stderr," -s              Simple Mode (default)\n");
 	fprintf(stderr," -g [src.gam]    Gamut Mapping Mode [optional source image gamut]\n");
@@ -1842,7 +1842,7 @@ main(int argc, char *argv[]) {
 
 	/* - - - - - - - - - - - - - - - - - - - */
 	/* Open up the input device profile for reading, and read header etc. */
-	if ((li.in.c = read_embeded_icc(in_name)) == NULL)
+	if ((li.in.c = read_embedded_icc(in_name)) == NULL)
 		error ("Can't open file '%s'",in_name);
 	li.in.h = li.in.c->header;
 
@@ -1893,7 +1893,7 @@ main(int argc, char *argv[]) {
 	}
 	/* - - - - - - - - - - - - - - - - - - - */
 	/* Open up the output device output profile for reading, and read header etc. */
-	if ((li.out.c = read_embeded_icc(out_name)) == NULL)
+	if ((li.out.c = read_embedded_icc(out_name)) == NULL)
 		error ("Can't open file '%s'",out_name);
 	li.out.h = li.out.c->header;
 

@@ -798,7 +798,7 @@ usage(int level, char *diag, ...) {
 			fprintf(stderr,"                 %d: %s\n",i+1,desc);
 		}
 	}
-	fprintf(stderr," -G               Generate good optimzed points rather than Fast\n");
+	fprintf(stderr," -G               Generate good optimized points rather than Fast\n");
 	fprintf(stderr," -e patches       White test patches (default 4)\n");
 	fprintf(stderr," -s steps         Single channel steps (default grey 50, color 0)\n");
 	fprintf(stderr," -g steps         Grey axis RGB or CMY steps (default 0)\n");

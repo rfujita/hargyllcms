@@ -2339,6 +2339,8 @@ int *p_npat			/* Return number of patches including padding */
 							sprintf(psname,"%s.ps",bname);
 							if ((tro = new_ps_trend(psname,npages,nmask,pw,ph,oft,rand,rstart)) == NULL)
 								error ("Unable to create output rendering object file '%s'",psname);
+							if (verb)
+								printf("Creating file '%s'\n",psname);
 						}
 					} else if (oft == 1) {	/* EPS */
 						if (npages > 1)
@@ -2347,6 +2349,8 @@ int *p_npat			/* Return number of patches including padding */
 							sprintf(psname,"%s.eps",bname);
 						if ((tro = new_ps_trend(psname,npages,nmask,pw,ph,oft,rand,rstart)) == NULL)
 							error ("Unable to create output rendering object file '%s'",psname);
+						if (verb)
+							printf("Creating file '%s'\n",psname);
 					} else {	/* TIFF */
 						double res;		/* pix/mm */
 						if (npages > 1)
@@ -2358,9 +2362,9 @@ int *p_npat			/* Return number of patches including padding */
 						if ((tro = new_tiff_trend(psname,nmask,tiffdpth,pw,ph,
 						    nosubmarg ? 0 : bord, res,res,pgreyt,ncha,tiffcomp)) == NULL)
 							error ("Unable to create output rendering object file '%s'",psname);
+						if (verb)
+							printf("Creating file '%s'\n",psname);
 					}
-					if (verb)
-						printf("Creating file '%s'\n",psname);
 					tro->startpage(tro,pif);
 
 					/* Print all the row labels */
@@ -2784,7 +2788,7 @@ void usage(char *diag, ...) {
 	fprintf(stderr," -c              Force colored spacers\n");
 	fprintf(stderr," -b              Force B&W spacers\n");
 	fprintf(stderr," -n              Force no spacers\n");
-	fprintf(stderr," -f              Create PostSCript DeviceN Color fallback\n");
+	fprintf(stderr," -f              Create PostScript DeviceN Color fallback\n");
 	fprintf(stderr," -w g|r|s|n      White colorspace encoding DeviceGray (def), DeviceRGB, Separation or DeviceN\n");            
 	fprintf(stderr," -k g|c|s|n      Black colorspace encoding DeviceGray (def), DeviceCMYK, Separation or DeviceN\n");            
 	fprintf(stderr," -e              Output EPS compatible file\n");

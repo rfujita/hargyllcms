@@ -22,6 +22,9 @@
 /*
  * TTBD:
  *
+ *		Should the input profile white point determination
+ *		be made a bit smarter about determining the chromaticity ?
+ *
  *      Some of the error handling is crude. Shouldn't use
  *      error(), should return status.
  *
@@ -860,7 +863,15 @@ if (!isLinear) {		/* Creating input curves */
 			/* We assume that the input target is well behaved, */
 			/* and that it includes a white and black point patch, */
 			/* and that they have the extreme L values */
-	
+
+			/*
+				NOTE that this may not be the best approach !
+				It may be better to average the chromaticity
+				of all the neutral seeming patches, since
+				the whitest patch may have (for instance)
+				a blue tint.
+			 */
+
 			/* Discover the white and black points */
 			for (i = 0; i < nodp; i++) {
 				if (points[i].v[0] > Lmax) {

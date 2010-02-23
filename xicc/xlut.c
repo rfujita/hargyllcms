@@ -27,6 +27,13 @@
  */
 
 /*
+	TTBD:
+
+		Should the input profile white point determination
+		be made a bit smarter about determining the chromaticity ?
+ */
+
+/*
 
 	NOTE :- an alternative to the way absolute is handled here would be
     to always chromatically adapt the illuminant to D50, and encode
@@ -2723,6 +2730,14 @@ int                quality			/* Quality metric, 0..3 */
 			/* We assume that the input target is well behaved, */
 			/* and that it includes a white and black point patch, */
 			/* and that they have the extreme L/Y values */
+
+			/*
+				NOTE that this may not be the best approach !
+				It may be better to average the chromaticity
+				of all the neutral seeming patches, since
+				the whitest patch may have (for instance)
+				a blue tint.
+			 */
 
 			wp[pcsy] = -1e60;
 			bp[pcsy] =  1e60;

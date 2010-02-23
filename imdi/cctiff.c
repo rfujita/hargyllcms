@@ -107,7 +107,7 @@ void usage(char *diag, ...) {
 	fprintf(stderr," -t n            Choose TIFF output encoding from 1..n\n");
 	fprintf(stderr," -a              Read and Write planes > 4 as alpha planes\n");
 	fprintf(stderr," -I              Ignore any file or profile colorspace mismatches\n");
-	fprintf(stderr," -D              Don't append or set the description\n");
+	fprintf(stderr," -D              Don't append or set the output TIFF description\n");
 	fprintf(stderr," -e profile.[%s | tiff]  Optionally embed a profile in the destination TIFF file.\n",ICC_FILE_EXT_ND);
 	fprintf(stderr,"\n");
 	fprintf(stderr,"                 Then for each profile in sequence:\n");
@@ -116,7 +116,7 @@ void usage(char *diag, ...) {
 	fprintf(stderr,"   -o order        n = normal (priority: lut > matrix > monochrome)\n");
 	fprintf(stderr,"                   r = reverse (priority: monochrome > matrix > lut)\n");
 	fprintf(stderr,"   profile.[%s | tiff]  Device, Link or Abstract profile\n",ICC_FILE_EXT_ND);
-	fprintf(stderr,"                   ( May be embeded profile in TIFF file)\n");
+	fprintf(stderr,"                   ( May be embedded profile in TIFF file)\n");
 	fprintf(stderr,"                 or each calibration file in sequence:\n");
 	fprintf(stderr,"   -d dir          f = forward cal. (default), b = backwards cal.\n");
 	fprintf(stderr,"   calbrtn.cal     Device calibration file.\n");
@@ -915,7 +915,7 @@ main(int argc, char *argv[]) {
 	int fa, nfa;							/* argument we're looking at */
 	char in_name[MAXNAMEL+1] = "";			/* Input raster file name */
 	char out_name[MAXNAMEL+1] = "";			/* Output raster file name */
-	char dst_pname[MAXNAMEL+1] = "";		/* Destination embeded profile file name */
+	char dst_pname[MAXNAMEL+1] = "";		/* Destination embedded profile file name */
 	icc *deicc = NULL;						/* Destination embedded profile (if any) */
 	icRenderingIntent next_intent;			/* Rendering intent for next profile */
 	icmLookupOrder next_order;				/* tag search order for next profile */
@@ -1270,7 +1270,7 @@ main(int argc, char *argv[]) {
 			su.profs[i].cal->del(su.profs[i].cal);	/* Clean up */
 			su.profs[i].cal = NULL;
 
-			if ((su.profs[i].c = read_embeded_icc(su.profs[i].name)) == NULL)
+			if ((su.profs[i].c = read_embedded_icc(su.profs[i].name)) == NULL)
 				error ("Can't read profile or calibration from file '%s'",su.profs[i].name);
 
 			su.profs[i].h = su.profs[i].c->header;
@@ -1476,7 +1476,7 @@ main(int argc, char *argv[]) {
 		unsigned char *buf;
 		int size;
 
-		if ((deicc = read_embeded_icc(dst_pname)) == NULL)
+		if ((deicc = read_embedded_icc(dst_pname)) == NULL)
 			error("Unable to open profile for destination embedding '%s'",dst_pname);
 
 		/* Check that it is compatible with the destination TIFF */

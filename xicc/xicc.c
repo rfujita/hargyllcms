@@ -1906,8 +1906,8 @@ char *as				/* Alias string selector, NULL for none */
 	 || no == icxRelativeGMIntent
 	 || (as != NULL && stricmp(as,"r") == 0)) {
 
-		/* Map Jab to Jab and clip out of gamut */
-		/* Linear transform of the neutral axis to align white */
+		/* Align neutral axes and linearly map white point, then */
+		/* map Jab to Jab and clip out of gamut */
 		no = 3;
 		gmi->as = "r";
 		gmi->desc = " r - White Point Matched Appearance [ICC Relative Colorimetric]";
@@ -1917,8 +1917,8 @@ char *as				/* Alias string selector, NULL for none */
 		gmi->greymf  = 1.0;			/* Fully align grey axis */
 		gmi->glumwcpf = 1.0;		/* Fully compress grey axis at white end */
 		gmi->glumwexf = 1.0;		/* Fully expand grey axis at white end */
-		gmi->glumbcpf = 0.0;
-		gmi->glumbexf = 0.0;
+		gmi->glumbcpf = 0.0;		/* No compression at black end */
+		gmi->glumbexf = 0.0;		/* No expansion at black end */
 		gmi->glumknf = 0.0;
 		gmi->gamcpf  = 0.0;
 		gmi->gamexf  = 0.0;
@@ -1931,8 +1931,8 @@ char *as				/* Alias string selector, NULL for none */
 	else if (no == 4
 	 || (as != NULL && stricmp(as,"la") == 0)) {
 
-		/* Map Jab to Jab, sigma map white/black points, and clip out of gamut */
-		/* Don't apply any luminance mapping "knee" */
+		/* Align neutral axes and linearly map white and black points, then */
+		/* map Jab to Jab and clip out of gamut */
 		no = 4;
 		gmi->as = "la";
 		gmi->desc = "la - Luminance axis matched Appearance";
@@ -1958,7 +1958,8 @@ char *as				/* Alias string selector, NULL for none */
 	 || no == icxPerceptualGMIntent
 	 || (as != NULL && stricmp(as,"p") == 0)) {
 
-		/* Map Jab to Jab, sigma map white/black, compress out of gamut */
+		/* Align neutral axes and perceptually map white and black points, */ 
+		/* perceptually compress out of gamut and map Jab to Jab. */  
 		no = 5;
 		gmi->as = "p";
 		gmi->desc = " p - Perceptual (Preferred) (Default) [ICC Perceptual]";
@@ -1982,7 +1983,8 @@ char *as				/* Alias string selector, NULL for none */
 	else if (no == 6
 	 || (as != NULL && stricmp(as,"ms") == 0)) {
 
-		/* Map Jab to Jab, sigma map whole gamut */
+		/* Align neutral axes and perceptually map white and black points, */ 
+		/* perceptually compress and expand to match gamuts and map Jab to Jab. */  
 		no = 6;
 		gmi->as = "ms";
 		gmi->desc = "ms - Saturation";
@@ -2007,7 +2009,7 @@ char *as				/* Alias string selector, NULL for none */
 	 || no == icxSaturationGMIntent
 	 || (as != NULL && stricmp(as,"s") == 0)) {
 
-		/* Map Jab to Jab, sigma map whole gamut */
+		/* Same as "ms" but enhance saturation */
 		no = 7;
 		gmi->as = "s";
 		gmi->desc = " s - Enhanced Saturation [ICC Saturation]";
@@ -2031,7 +2033,7 @@ char *as				/* Alias string selector, NULL for none */
 	else if (no == 8
 	 || (as != NULL && stricmp(as,"al") == 0)) {
 
-		/* Map Absolute Lab to Lab and clip out of gamut */
+		/* Map absolute L*a*b* to L*a*b* and clip out of gamut */
 		no = 8;
 		gmi->as = "al";
 		gmi->desc = "al - Absolute Colorimetric (Lab)";
@@ -2055,8 +2057,8 @@ char *as				/* Alias string selector, NULL for none */
 	else if (no == 9
 	 || (as != NULL && stricmp(as,"rl") == 0)) {
 
-		/* Map Lab to Lab and clip out of gamut */
-		/* Linear transform of the neutral axis to align white */
+		/* Align neutral axes and linearly map white point, then */
+		/* map L*a*b* to L*a*b* and clip out of gamut */
 		no = 3;
 		gmi->as = "rl";
 		gmi->desc = "rl - White Point Matched Appearance (Lab)";

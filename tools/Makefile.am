@@ -40,24 +40,24 @@ PROFILE_LDADD = 			  		\
 	../lib/libargyll.a ../icc/libicc.a 	\
 	$(TIFF_LIBS) $(X_LIBS) -lusb
 
-bin_PROGRAMS += simpprof kodak2cgats cb2cgats logo2cgats splitcgats	\
+bin_PROGRAMS += simpprof kodak2ti3 cb2ti3 logo2ti3 splitti3	\
 	profcheck invprofcheck mpprof mppcheck verify colprof printcal	\
 	applycal sepgen
 
 simpprof_SOURCES = ../profile/simpprof.c
 simpprof_LDADD = $(PROFILE_LDADD)
 
-kodak2cgats_SOURCES = ../profile/kodak2cgats.c
-kodak2cgats_LDADD = $(PROFILE_LDADD)
+kodak2ti3_SOURCES = ../profile/kodak2ti3.c
+kodak2ti3_LDADD = $(PROFILE_LDADD)
 
-cb2cgats_SOURCES = ../profile/cb2cgats.c
-cb2cgats_LDADD = $(PROFILE_LDADD)
+cb2ti3_SOURCES = ../profile/cb2ti3.c
+cb2ti3_LDADD = $(PROFILE_LDADD)
 
-logo2cgats_SOURCES = ../profile/logo2cgats.c
-logo2cgats_LDADD = $(PROFILE_LDADD)
+logo2ti3_SOURCES = ../profile/logo2ti3.c
+logo2ti3_LDADD = $(PROFILE_LDADD)
 
-splitcgats_SOURCES = ../profile/splitcgats.c
-splitcgats_LDADD = $(PROFILE_LDADD)
+splitti3_SOURCES = ../profile/splitti3.c
+splitti3_LDADD = $(PROFILE_LDADD)
 
 profcheck_SOURCES = ../profile/profcheck.c
 profcheck_LDADD = $(PROFILE_LDADD)
