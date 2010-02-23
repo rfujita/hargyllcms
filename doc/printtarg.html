@@ -408,7 +408,8 @@ default this will be a character sequence A, B, C .. Z. AA, AB, AC ..
 ZZ, but this can be changed by specifying an alternate labelling
 sequence pattern. The pattern specifies the labelling sequence as
 follows: First comes the definition of the symbols for each digit
-location, least significant to most significant. Note that space is a
+location, least significant to most significant, each digit separated
+by the ',' character. Note that space is a
 valid character. The number of
 definitions declares the maximum number of digits. For example, for a 2
 digit numerical sequence: "0123456789, 123456789" would define
@@ -419,7 +420,7 @@ can be used for brevity: "0-9, 1-9". As a special case, the '@'
 character can be used to instead of '0' to indicate suppression of the
 leading zero: "0-9,@-9". Leading ' ' characters in the resulting
 generated sequence are
-omitted. Optionally following this, and delimited by a ';'
+omitted. Optionally following this and delimited by a ';'
 character, are the definitions of valid segments of the index sequence.
 For instance, to define the index range to be 1..19, 30..39 one could
 use the pattern "0-9, 1-9;1-19,30-39". Of course most of the time an

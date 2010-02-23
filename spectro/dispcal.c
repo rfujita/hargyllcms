@@ -22,13 +22,16 @@
 
 	The verify (-E) may not be being done correctly.
 	Like update, shouldn't it read the .cal file to set what's
-	being calibrated agaist ?
+	being calibrated agaist ? (This would fix missing ambient value too!)
+
 	What about the "Read the base test set" - aren't
 	there numbers then used to tweak the black aim point
 	in "Figure out the black point target" - Yes they are !!
 	Verify probably shouldn't work this way.
 
+
 	Add option to plot graph of native and calibrated RGB ?
+
 
 	Add a "delta E" number to the interactive adjustments,
 	so the significance of the error can be judged ?
@@ -1274,7 +1277,7 @@ void usage(char *diag, ...) {
 	fprintf(stderr," -C \"command\"         Invoke shell \"command\" each time a color is set\n");
 #endif
 	fprintf(stderr," -M \"command\"         Invoke shell \"command\" each time a color is measured\n");
-	fprintf(stderr," -W n|h|x             Ovride serial port flow control: n = none, h = HW, x = Xon/Xoff\n");
+	fprintf(stderr," -W n|h|x             Override serial port flow control: n = none, h = HW, x = Xon/Xoff\n");
 	fprintf(stderr," -D [level]           Print debug diagnostics to stderr\n");
 	fprintf(stderr," inoutfile            Base name for created or updated .cal and %s output files\n",ICC_FILE_EXT);
 	exit(1);
@@ -1351,6 +1354,7 @@ int main(int argc, char *argv[])
 	{
 		SInt32 MacVers;
 
+		/* Hmm. Maybe this should actually be 1.72 ?? */
 		g_def_gamma = 1.8;
 
 		/* OS X 10.6 uses a nominal gamma of 2.2 */
@@ -2267,7 +2271,7 @@ int main(int argc, char *argv[])
 	}
 	/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 	/* Convert quality level to iterations etc. */
-	/* Note that final tollerance is often double the */
+	/* Note that final tolerance is often double the */
 	/* final errth, because one more corrections is always */
 	/* performed after the last reading. */
     switch (quality) {

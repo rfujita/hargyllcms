@@ -11,6 +11,7 @@ ref_DATA =						\
 	ColorCheckerDC.cht				\
 	ColorCheckerSG.cht				\
 	ColorChecker.ti2				\
+	CMP_Digital_Target-3.ti2			\
 	ColorChecker.cie				\
 	CMP_Digital_Target-3.cht			\
 	D50_0.1.sp					\

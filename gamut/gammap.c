@@ -1804,7 +1804,7 @@ typedef struct {
 					maxde = de;
 			}
 			avgde /= nnsm;
-			fprintf(stderr,"Gamut hull mapping errors: = avg %f, max %f\n",avgde,maxde);
+			printf("Gamut hull fit to guides: = avg %f, max %f\n",avgde,maxde);
 		}
 #endif /* CHECK_NEARMAP */
 

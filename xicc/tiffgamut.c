@@ -53,7 +53,7 @@ void usage(void) {
 	int i;
 	fprintf(stderr,"Create VRML image of the gamut surface of a TIFF, Version %s\n",ARGYLL_VERSION_STR);
 	fprintf(stderr,"Author: Graeme W. Gill, licensed under the GPL Version 3\n");
-	fprintf(stderr,"usage: tiffgamut [-v level] [profile.icm | embeded.tif] infile1.tif [infile2.tif ...] \n");
+	fprintf(stderr,"usage: tiffgamut [-v level] [profile.icm | embedded.tif] infile1.tif [infile2.tif ...] \n");
 	fprintf(stderr," -v            Verbose\n");
 	fprintf(stderr," -d sres       Surface resolution details 1.0 - 50.0\n");
 	fprintf(stderr," -w            emit VRML .wrl file as well as CGATS .gam file\n");
@@ -554,7 +554,7 @@ main(int argc, char *argv[]) {
 	if (prof_name[0] != '\000') {
 
 		/* Open up the profile or TIFF embedded profile for reading */
-		if ((icco = read_embeded_icc(prof_name)) == NULL)
+		if ((icco = read_embedded_icc(prof_name)) == NULL)
 			error ("Can't open profile in file '%s'",prof_name);
 	
 		if (verb) {
